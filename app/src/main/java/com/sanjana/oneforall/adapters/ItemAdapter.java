@@ -53,7 +53,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
         Item item = items.get(position);
 
-        // Title
+        // ---------------------- TITLE ----------------------
         holder.tvTitle.setText(item.title);
 
         // Load category in background
@@ -63,17 +63,24 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
             for (Category c : categories) if (c.id == item.categoryId) category = c;
 
             Category finalCategory = category;
-            holder.tvCategory.post(() ->
-                    holder.tvCategory.setText(finalCategory != null ? finalCategory.name : "Unknown")
-            );
+            holder.tvTitle.post(() -> {
+                // Set title text color to category color
+                if (finalCategory != null) {
+                    holder.tvTitle.setTextColor(finalCategory.color);
+                    holder.tvCategory.setText(finalCategory.name);
+                } else {
+                    holder.tvTitle.setTextColor(context.getResources().getColor(R.color.black));
+                    holder.tvCategory.setText("Unknown");
+                }
+            });
         });
 
-        // Progress
+        // ---------------------- PROGRESS ----------------------
         holder.progressBar.setMax(item.totalProgress > 0 ? item.totalProgress : 100);
         holder.progressBar.setProgress(item.currentProgress);
         holder.tvProgress.setText(item.currentProgress + "/" + (item.totalProgress > 0 ? item.totalProgress : 100));
 
-        // Status
+        // ---------------------- STATUS ----------------------
         holder.tvStatus.setText(item.status != null ? item.status : "N/A");
 
         // Show/hide + button

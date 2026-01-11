@@ -1,5 +1,6 @@
 package com.sanjana.oneforall.ui.list;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -13,26 +14,20 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.sanjana.oneforall.R;
-import com.sanjana.oneforall.adapters.ListFolderAdapter;
 import com.sanjana.oneforall.adapters.ListItemAdapter;
 import com.sanjana.oneforall.database.AppDatabase;
-import com.sanjana.oneforall.database.ListFolder;
 import com.sanjana.oneforall.database.ListItem;
-import com.sanjana.oneforall.ui.list.AddEditListActivity;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ListFragment extends Fragment {
 
-    private RecyclerView rvFolders, rvItems;
-    private ListFolderAdapter folderAdapter;
+    private RecyclerView rvItems;
     private ListItemAdapter itemAdapter;
-    private List<ListFolder> folders = new ArrayList<>();
     private List<ListItem> items = new ArrayList<>();
     private AppDatabase db;
-
-    private ListFolder selectedFolder;
 
     @Nullable
     @Override
@@ -43,65 +38,38 @@ public class ListFragment extends Fragment {
 
         db = AppDatabase.getInstance(requireContext());
 
-        rvFolders = view.findViewById(R.id.rvFolders);
         rvItems = view.findViewById(R.id.rvListItems);
-
-        // --- FOLDERS ADAPTER ---
-        folderAdapter = new ListFolderAdapter(getContext(), folders, folder -> {
-            selectedFolder = folder;
-            loadItems();
-        });
-        rvFolders.setAdapter(folderAdapter);
-        rvFolders.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-
-        // --- ITEMS ADAPTER ---
-        itemAdapter = new ListItemAdapter(getContext(), items, new ListItemAdapter.OnItemClickListener() {
-            @Override
-            public void onEdit(ListItem item) {
-                Intent i = new Intent(getContext(), AddEditListActivity.class);
-                i.putExtra("itemId", item.id);
-                startActivity(i);
-            }
-
-            @Override
-            public void onDelete(ListItem item) {
-                new Thread(() -> {
-                    db.listItemDao().delete(item);
-                    loadItems(); // reload after deletion
-                }).start();
-            }
-        });
-        rvItems.setAdapter(itemAdapter);
         rvItems.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        loadFolders(); // initial load
+        itemAdapter = new ListItemAdapter(getContext(), items, item -> {
+            // Delete confirmation
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Delete Note")
+                    .setMessage("Are you sure you want to delete this note?")
+                    .setPositiveButton("Yes", (dialog, which) -> {
+                        new Thread(() -> {
+                            db.listItemDao().delete(item);
+                            requireActivity().runOnUiThread(() -> itemAdapter.removeItem(item));
+                        }).start();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+
+        rvItems.setAdapter(itemAdapter);
+
+        loadItems();
 
         return view;
     }
 
-    private void loadFolders() {
-        new Thread(() -> {
-            List<ListFolder> dbFolders = db.listFolderDao().getAll(); // background thread
-            getActivity().runOnUiThread(() -> { // update UI
-                folders.clear();
-                folders.addAll(dbFolders);
-                folderAdapter.notifyDataSetChanged();
-
-                if (!folders.isEmpty()) {
-                    selectedFolder = folders.get(0);
-                    loadItems(); // load items for the first folder
-                }
-            });
-        }).start();
-    }
-
     private void loadItems() {
-        if (selectedFolder == null) return;
-
         new Thread(() -> {
-            List<ListItem> dbItems = db.listItemDao().getByFolder(selectedFolder.id);
-            // optional: filter visible/favorites here if needed
-            getActivity().runOnUiThread(() -> {
+            List<ListItem> dbItems = db.listItemDao().getAll();
+            // Sort by latest first
+            Collections.sort(dbItems, (a, b) -> Long.compare(b.timestamp, a.timestamp));
+
+            requireActivity().runOnUiThread(() -> {
                 items.clear();
                 items.addAll(dbItems);
                 itemAdapter.notifyDataSetChanged();
@@ -112,6 +80,6 @@ public class ListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadFolders(); // refresh when returning to fragment
+        loadItems(); // refresh when returning from edit/add
     }
 }

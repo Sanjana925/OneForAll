@@ -5,8 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CalendarView;
-import android.widget.ImageButton;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,12 +34,7 @@ public class CalendarFragment extends Fragment {
     private List<String> eventTitles = new ArrayList<>();
     private AppDatabase db;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private TextView tvMonthYear;
-    private ImageButton btnPrevMonth, btnNextMonth;
-    private Calendar currentCalendar;
-
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-    private SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
 
     @Nullable
     @Override
@@ -51,36 +44,16 @@ public class CalendarFragment extends Fragment {
 
         calendarView = view.findViewById(R.id.calendarView);
         rvEvents = view.findViewById(R.id.rvEvents);
-        tvMonthYear = view.findViewById(R.id.tvMonthYear);
-        btnPrevMonth = view.findViewById(R.id.btnPrevMonth);
-        btnNextMonth = view.findViewById(R.id.btnNextMonth);
 
         db = AppDatabase.getInstance(requireContext());
-        currentCalendar = Calendar.getInstance();
 
         setupRecyclerView();
-        updateMonthYearText();
-        loadEventsForDate(currentCalendar.getTime());
+        loadEventsForDate(new Date(calendarView.getDate())); // load initial events
 
-        // When user selects a date
         calendarView.setOnDateChangeListener((view1, year, month, dayOfMonth) -> {
             Calendar selected = Calendar.getInstance();
             selected.set(year, month, dayOfMonth);
             loadEventsForDate(selected.getTime());
-        });
-
-        // Previous month button
-        btnPrevMonth.setOnClickListener(v -> {
-            currentCalendar.add(Calendar.MONTH, -1);
-            updateMonthYearText();
-            updateCalendarViewDate();
-        });
-
-        // Next month button
-        btnNextMonth.setOnClickListener(v -> {
-            currentCalendar.add(Calendar.MONTH, 1);
-            updateMonthYearText();
-            updateCalendarViewDate();
         });
 
         return view;
@@ -90,15 +63,6 @@ public class CalendarFragment extends Fragment {
         adapter = new DailyEventsAdapter(eventTitles);
         rvEvents.setLayoutManager(new LinearLayoutManager(getContext()));
         rvEvents.setAdapter(adapter);
-    }
-
-    private void updateMonthYearText() {
-        tvMonthYear.setText(monthYearFormat.format(currentCalendar.getTime()));
-    }
-
-    private void updateCalendarViewDate() {
-        calendarView.setDate(currentCalendar.getTimeInMillis(), false, true);
-        loadEventsForDate(currentCalendar.getTime());
     }
 
     private void loadEventsForDate(Date date) {

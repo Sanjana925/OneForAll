@@ -3,49 +3,14 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+  >
 
-    <!-- Month navigation -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="8dp">
-
-        <ImageButton
-            android:id="@+id/btnPrevMonth"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_arrow_left"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/previous_month"/>
-
-        <TextView
-            android:id="@+id/tvMonthYear"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="@string/january_2026"
-            android:textSize="18sp"
-            android:layout_height="wrap_content"
-            android:textStyle="bold"/>
-
-        <ImageButton
-            android:id="@+id/btnNextMonth"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_arrow_right"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/next_month"/>
-    </LinearLayout>
-
-    <!-- CalendarView (month view) -->
+    <!-- CalendarView (month view with default header) -->
     <CalendarView
         android:id="@+id/calendarView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"/>
+        />
 
     <!-- RecyclerView for events of selected date -->
     <TextView
@@ -54,7 +19,7 @@
         android:text="@string/events"
         android:textStyle="bold"
         android:textSize="16sp"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginBottom="8dp"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvEvents"

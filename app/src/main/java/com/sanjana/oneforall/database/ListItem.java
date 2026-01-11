@@ -13,6 +13,7 @@ public class ListItem {
     public String title;
     public String content;    // free text / bullets
     public long updatedAt;
+    public long timestamp;
 
 
     public ListItem(int folderId, String title, String content, long updatedAt) {

@@ -2,7 +2,7 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
+    android:layout_margin="6dp"
     android:padding="12dp"
     android:elevation="4dp">
 
@@ -11,6 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <!-- Title Row -->
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
@@ -22,14 +23,10 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:textSize="16sp"
-                android:textColor="@android:color/black" android:layout_height="match_parent"/>
-
-            <ImageButton
-                android:id="@+id/btnEdit"
-                android:layout_width="wrap_content"
+                android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_edit"
-                android:background="?attr/selectableItemBackgroundBorderless"/>
+                android:maxLines="1"
+                android:ellipsize="end"/>
 
             <ImageButton
                 android:id="@+id/btnDelete"
@@ -39,10 +36,14 @@
                 android:background="?attr/selectableItemBackgroundBorderless"/>
         </LinearLayout>
 
+        <!-- Content Preview -->
         <TextView
             android:id="@+id/tvItemContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="8dp"/>
+            android:paddingTop="4dp"
+            android:textColor="@android:color/black"
+            android:maxLines="3"
+            android:ellipsize="end"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

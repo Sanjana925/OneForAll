@@ -1,6 +1,7 @@
 package com.sanjana.oneforall.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.sanjana.oneforall.R;
 import com.sanjana.oneforall.database.ListItem;
+import com.sanjana.oneforall.ui.list.AddEditListActivity;
 
 import java.util.List;
 
@@ -22,7 +24,6 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ListIt
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
-        void onEdit(ListItem item);
         void onDelete(ListItem item);
     }
 
@@ -45,8 +46,17 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ListIt
         holder.tvTitle.setText(item.title);
         holder.tvContent.setText(item.content);
 
-        holder.btnEdit.setOnClickListener(v -> listener.onEdit(item));
-        holder.btnDelete.setOnClickListener(v -> listener.onDelete(item));
+        // Delete
+        holder.btnDelete.setOnClickListener(v -> {
+            if (listener != null) listener.onDelete(item);
+        });
+
+        // Click card → open edit page
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, AddEditListActivity.class);
+            intent.putExtra("itemId", item.id);
+            context.startActivity(intent);
+        });
     }
 
     @Override
@@ -54,15 +64,41 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ListIt
         return items.size();
     }
 
-    public static class ListItemViewHolder extends RecyclerView.ViewHolder {
+    public void addItemToTop(ListItem item) {
+        items.add(0, item);
+        notifyItemInserted(0);
+    }
+
+    public void updateItem(ListItem item) {
+        int index = -1;
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).id == item.id) {
+                index = i;
+                break;
+            }
+        }
+        if (index != -1) {
+            items.set(index, item);
+            notifyItemChanged(index);
+        }
+    }
+
+    public void removeItem(ListItem item) {
+        int index = items.indexOf(item);
+        if (index != -1) {
+            items.remove(index);
+            notifyItemRemoved(index);
+        }
+    }
+
+    static class ListItemViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvContent;
-        ImageButton btnEdit, btnDelete;
+        ImageButton btnDelete;
 
         public ListItemViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvItemTitle);
             tvContent = itemView.findViewById(R.id.tvItemContent);
-            btnEdit = itemView.findViewById(R.id.btnEdit);
             btnDelete = itemView.findViewById(R.id.btnDelete);
         }
     }

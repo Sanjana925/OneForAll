@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:padding="12dp">
 
+    <!-- Horizontal folder list -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFolders"
         android:layout_width="match_parent"
@@ -13,9 +14,11 @@
         android:paddingBottom="8dp"
         android:clipToPadding="false"/>
 
+    <!-- Vertical scrollable list of cards -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvListItems"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:clipToPadding="false"/>
 </LinearLayout>

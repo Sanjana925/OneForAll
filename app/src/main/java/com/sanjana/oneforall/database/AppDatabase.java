@@ -14,7 +14,7 @@ import androidx.room.RoomDatabase;
                 ListItem.class,
                 CalendarEvent.class   // <- Add this
         },
-        version = 2   // <- Increment version because we added a new table
+        version = 1  // <- Increment version because we added a new table
 )
 public abstract class AppDatabase extends RoomDatabase {
 

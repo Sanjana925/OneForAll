@@ -1,46 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="12dp">
 
+    <!-- Top -->
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <!-- Add Folder Button -->
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
         <Button
             android:id="@+id/btnAddFolder"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="Add Folder" />
-
-        <Spinner
-            android:id="@+id/spinnerFolder"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <EditText
-            android:id="@+id/editListTitle"
-            android:hint="Title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"/>
-
-        <EditText
-            android:id="@+id/editListContent"
-            android:hint="Content / Notes"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:gravity="top"
-            android:layout_marginTop="12dp"
-            android:inputType="textMultiLine"/>
+            android:text="Add Folder"/>
 
         <Button
             android:id="@+id/btnSave"
-            android:text="Save"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"/>
+            android:text="Save"
+            android:layout_marginStart="12dp"/>
     </LinearLayout>
-</ScrollView>
+
+    <Spinner
+        android:id="@+id/spinnerFolder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"/>
+
+    <EditText
+        android:id="@+id/editListTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Title"
+        android:textSize="18sp"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- Scrollable Notes -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <EditText
+            android:id="@+id/editListContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Notes"
+            android:gravity="top"
+            android:inputType="textMultiLine"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"/>
+    </ScrollView>
+
+</LinearLayout>

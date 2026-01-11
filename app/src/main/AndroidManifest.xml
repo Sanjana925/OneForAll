@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OneForAll">
         <activity
+            android:name=".ui.list.ListItemDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.list.AddEditListActivity"
             android:exported="true" />
         <activity
@@ -20,7 +23,6 @@
         <activity
             android:name=".ui.category.AddCategoryActivity"
             android:exported="true" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true">
