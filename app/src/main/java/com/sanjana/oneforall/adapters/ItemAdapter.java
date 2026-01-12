@@ -15,131 +15,192 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.sanjana.oneforall.R;
-import com.sanjana.oneforall.database.AppDatabase;
-import com.sanjana.oneforall.database.Category;
-import com.sanjana.oneforall.database.CalendarEvent;
-import com.sanjana.oneforall.database.Item;
+import com.sanjana.oneforall.database.*;
 import com.sanjana.oneforall.ui.home.AddEditItemActivity;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder> {
 
-    private Context context;
-    private List<Item> items;
-    private AppDatabase db;
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    private final Context context;
+    private final List<Item> items;
+    private final AppDatabase db;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public ItemAdapter(Context context, List<Item> items) {
         this.context = context;
         this.items = items;
-        db = AppDatabase.getInstance(context);
+        this.db = AppDatabase.getInstance(context);
     }
 
     @NonNull
     @Override
     public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_home, parent, false);
-        return new ItemViewHolder(view);
+        return new ItemViewHolder(LayoutInflater.from(context).inflate(R.layout.item_home, parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ItemViewHolder h, int position) {
         Item item = items.get(position);
 
-        // ---------------------- TITLE ----------------------
-        holder.tvTitle.setText(item.title);
+        h.tvTitle.setText(item.title);
+        h.tvStatus.setText(item.status);
 
-        // Load category in background
+        // Load category
         executor.execute(() -> {
-            List<Category> categories = db.categoryDao().getAllCategories();
-            Category category = null;
-            for (Category c : categories) if (c.id == item.categoryId) category = c;
-
-            Category finalCategory = category;
-            holder.tvTitle.post(() -> {
-                // Set title text color to category color
-                if (finalCategory != null) {
-                    holder.tvTitle.setTextColor(finalCategory.color);
-                    holder.tvCategory.setText(finalCategory.name);
-                } else {
-                    holder.tvTitle.setTextColor(context.getResources().getColor(R.color.black));
-                    holder.tvCategory.setText("Unknown");
+            Category c = db.categoryDao().getCategoryById(item.categoryId);
+            h.itemView.post(() -> {
+                if (c != null) {
+                    h.tvTitle.setTextColor(c.color);
+                    h.tvCategory.setText(c.name);
                 }
             });
         });
 
-        // ---------------------- PROGRESS ----------------------
-        holder.progressBar.setMax(item.totalProgress > 0 ? item.totalProgress : 100);
-        holder.progressBar.setProgress(item.currentProgress);
-        holder.tvProgress.setText(item.currentProgress + "/" + (item.totalProgress > 0 ? item.totalProgress : 100));
+        int max = item.totalProgress > 0 ? item.totalProgress : 100;
+        h.progressBar.setMax(max);
+        h.progressBar.setProgress(item.currentProgress);
+        h.tvProgress.setText(item.currentProgress + "/" + max);
 
-        // ---------------------- STATUS ----------------------
-        holder.tvStatus.setText(item.status != null ? item.status : "N/A");
+        h.btnIncrease.setVisibility(item.currentProgress < max ? View.VISIBLE : View.GONE);
+        h.btnDecrease.setVisibility(item.currentProgress > 0 ? View.VISIBLE : View.GONE);
 
-        // Show/hide + button
-        holder.btnIncreaseProgress.setVisibility(item.currentProgress >= item.totalProgress ? View.GONE : View.VISIBLE);
+        // ------------------- INCREASE -------------------
+        h.btnIncrease.setOnClickListener(v -> changeProgress(item, position, true));
 
-        // ---------------------- + BUTTON CLICK ----------------------
-        holder.btnIncreaseProgress.setOnClickListener(v -> {
-            if (item.currentProgress < item.totalProgress) {
-                item.currentProgress++;
+        // ------------------- DECREASE -------------------
+        h.btnDecrease.setOnClickListener(v -> changeProgress(item, position, false));
 
-                // Update UI
-                holder.progressBar.setProgress(item.currentProgress);
-                holder.tvProgress.setText(item.currentProgress + "/" + item.totalProgress);
+        // ------------------- EDIT -------------------
+        h.btnEdit.setOnClickListener(v -> {
+            Intent i = new Intent(context, AddEditItemActivity.class);
+            i.putExtra("itemId", item.id);
+            context.startActivity(i);
+        });
 
-                // Determine new status
-                String newStatus = item.currentProgress >= item.totalProgress ? "Completed" : "Watching";
-                item.status = newStatus;
-                holder.tvStatus.setText(newStatus);
+        // ------------------- DELETE -------------------
+        h.btnDelete.setOnClickListener(v -> new AlertDialog.Builder(context)
+                .setTitle("Delete Item")
+                .setMessage("Are you sure?")
+                .setPositiveButton("Yes", (d, w) -> executor.execute(() -> {
+                    db.itemDao().delete(item);
 
-                // Hide + button if completed
-                if (item.currentProgress >= item.totalProgress) {
-                    holder.btnIncreaseProgress.setVisibility(View.GONE);
+                    removeCalendarEvent(item.startDate, item.title + " (Started)");
+                    removeCalendarEvent(item.endDate, item.title + " (Ended)");
+                    removeWatchingEventByPrefix(LocalDate.now().toString(), item.title);
+
+                    h.itemView.post(() -> {
+                        items.remove(position);
+                        notifyItemRemoved(position);
+                        Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show();
+                    });
+                }))
+                .setNegativeButton("Cancel", null)
+                .show()
+        );
+    }
+
+    // ------------------- CHANGE PROGRESS -------------------
+    private void changeProgress(Item item, int position, boolean increase) {
+        executor.execute(() -> {
+            int old = item.currentProgress;
+            int max = item.totalProgress > 0 ? item.totalProgress : 100;
+
+            if (increase && old < max) item.currentProgress++;
+            if (!increase && old > 0) item.currentProgress--;
+
+            String today = LocalDate.now().toString();
+
+            // ------------------ STARTED ------------------
+            if (old == 0 && item.currentProgress == 1) {
+                if (item.startDate == null || item.startDate.isEmpty()) item.startDate = today;
+                addCalendarEvent(item.startDate, item.title + " (Started)", "Started");
+                item.status = "Watching";
+            }
+
+            // ------------------ DAILY PROGRESS ------------------
+            if (item.currentProgress > 0 && item.currentProgress < max) {
+                DailyProgress dp = db.dailyProgressDao().getByItemAndDate(item.id, today);
+                if (dp == null) {
+                    dp = new DailyProgress(item.id, today, item.currentProgress, item.currentProgress);
+                    db.dailyProgressDao().insert(dp);
+                } else {
+                    dp.lastEp = item.currentProgress;
+                    if (dp.firstEp > item.currentProgress) dp.firstEp = item.currentProgress;
+                    db.dailyProgressDao().update(dp);
                 }
 
-                // Update database
-                executor.execute(() -> {
-                    db.itemDao().update(item);
-                    updateCalendarEventToday(item.title, newStatus);
-                });
+                // Update or add watching event dynamically
+                if (dp.firstEp > 0) {
+                    addOrUpdateWatchingEvent(today, item.title, dp.firstEp, dp.lastEp);
+                }
+
+                item.status = "Watching";
             }
-        });
 
-        // ---------------------- EDIT ----------------------
-        holder.btnEdit.setOnClickListener(v -> {
-            Intent intent = new Intent(context, AddEditItemActivity.class);
-            intent.putExtra("itemId", item.id);
-            context.startActivity(intent);
-        });
+            // ------------------ ENDED ------------------
+            if (item.currentProgress == max && max > 0) {
+                removeWatchingEventByPrefix(today, item.title);
+                addCalendarEvent(today, item.title + " (Ended)", "Completed");
+                item.status = "Completed";
+            }
 
-        // ---------------------- DELETE ----------------------
-        holder.btnDelete.setOnClickListener(v -> {
-            new AlertDialog.Builder(context)
-                    .setTitle("Delete Item")
-                    .setMessage("Are you sure you want to delete this item?")
-                    .setPositiveButton("Yes", (dialog, which) -> {
-                        executor.execute(() -> {
-                            db.itemDao().delete(item);
-                            removeCalendarEventToday(item.title);
+            // ------------------ DECREASE ------------------
+            if (!increase) {
+                if (old == max && item.currentProgress < max) removeCalendarEvent(today, item.title + " (Ended)");
+                if (item.currentProgress == 0) {
+                    removeCalendarEvent(item.startDate, item.title + " (Started)");
+                    item.status = "Plan to Watch";
+                }
+            }
 
-                            holder.itemView.post(() -> {
-                                items.remove(position);
-                                notifyItemRemoved(position);
-                                Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show();
-                            });
-                        });
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
+            db.itemDao().update(item);
+            notifyUi(position);
         });
+    }
+
+    private void notifyUi(int position) {
+        new android.os.Handler(android.os.Looper.getMainLooper())
+                .post(() -> notifyItemChanged(position));
+    }
+
+    // ------------------- CALENDAR -------------------
+    private void addOrUpdateWatchingEvent(String date, String title, int firstEp, int lastEp) {
+        if (date == null || date.isEmpty()) return;
+
+        String prefix = title + " (Watching)";
+        CalendarEvent existing = db.calendarEventDao().getEventByTitleAndDatePrefix(prefix, date);
+
+        String newTitle = prefix + " " + (lastEp - firstEp + 1) + " eps (" + firstEp + "-" + lastEp + ")";
+
+        if (existing == null) {
+            db.calendarEventDao().insert(new CalendarEvent(newTitle, date, "Watching"));
+        } else {
+            existing.title = newTitle;
+            db.calendarEventDao().update(existing);
+        }
+    }
+
+    private void addCalendarEvent(String date, String title, String status) {
+        if (date == null || date.isEmpty()) return;
+        CalendarEvent existing = db.calendarEventDao().getEventByTitleAndDate(title, date);
+        if (existing == null) db.calendarEventDao().insert(new CalendarEvent(title, date, status));
+    }
+
+    private void removeCalendarEvent(String date, String title) {
+        if (date == null || date.isEmpty()) return;
+        CalendarEvent e = db.calendarEventDao().getEventByTitleAndDate(title, date);
+        if (e != null) db.calendarEventDao().delete(e);
+    }
+
+    private void removeWatchingEventByPrefix(String date, String title) {
+        if (date == null || date.isEmpty()) return;
+        String prefix = title + " (Watching)";
+        CalendarEvent e = db.calendarEventDao().getEventByTitleAndDatePrefix(prefix, date);
+        if (e != null) db.calendarEventDao().delete(e);
     }
 
     @Override
@@ -147,39 +208,23 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         return items.size();
     }
 
-    // ---------------------- HELPER: CALENDAR EVENTS ----------------------
-    private void updateCalendarEventToday(String title, String status) {
-        String today = dateFormat.format(Calendar.getInstance().getTime());
-        CalendarEvent existing = db.calendarEventDao().getEventByTitleAndDate(title, today);
-        if (existing != null) db.calendarEventDao().delete(existing);
-
-        if (status.equals("Watching") || status.equals("Completed")) {
-            CalendarEvent newEvent = new CalendarEvent(title, today, status);
-            db.calendarEventDao().insert(newEvent);
-        }
-    }
-
-    private void removeCalendarEventToday(String title) {
-        String today = dateFormat.format(Calendar.getInstance().getTime());
-        CalendarEvent event = db.calendarEventDao().getEventByTitleAndDate(title, today);
-        if (event != null) db.calendarEventDao().delete(event);
-    }
-
+    // ------------------- VIEW HOLDER -------------------
     static class ItemViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvCategory, tvStatus, tvProgress;
         ProgressBar progressBar;
-        ImageButton btnEdit, btnDelete, btnIncreaseProgress;
+        ImageButton btnEdit, btnDelete, btnIncrease, btnDecrease;
 
-        public ItemViewHolder(@NonNull View itemView) {
-            super(itemView);
-            tvTitle = itemView.findViewById(R.id.itemTitle);
-            tvCategory = itemView.findViewById(R.id.itemCategory);
-            tvStatus = itemView.findViewById(R.id.itemStatus);
-            tvProgress = itemView.findViewById(R.id.itemProgressText);
-            progressBar = itemView.findViewById(R.id.itemProgress);
-            btnEdit = itemView.findViewById(R.id.editItem);
-            btnDelete = itemView.findViewById(R.id.deleteItem);
-            btnIncreaseProgress = itemView.findViewById(R.id.btnIncreaseProgress);
+        ItemViewHolder(View v) {
+            super(v);
+            tvTitle = v.findViewById(R.id.itemTitle);
+            tvCategory = v.findViewById(R.id.itemCategory);
+            tvStatus = v.findViewById(R.id.itemStatus);
+            tvProgress = v.findViewById(R.id.itemProgressText);
+            progressBar = v.findViewById(R.id.itemProgress);
+            btnEdit = v.findViewById(R.id.editItem);
+            btnDelete = v.findViewById(R.id.deleteItem);
+            btnIncrease = v.findViewById(R.id.btnIncreaseProgress);
+            btnDecrease = v.findViewById(R.id.btnDecreaseProgress);
         }
     }
 }

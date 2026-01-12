@@ -1,21 +1,17 @@
 package com.sanjana.oneforall.database;
 
-import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "calendar_events")
+@Entity
 public class CalendarEvent {
+
     @PrimaryKey(autoGenerate = true)
     public int id;
 
-    @NonNull
-    public String title;
-
-    @NonNull
-    public String date; // yyyy-MM-dd
-
-    public String status;
+    public String title;    // e.g., "My Show (Watching) 3 eps (1-3)"
+    public String date;     // yyyy-MM-dd
+    public String status;   // "Started", "Watching", "Completed"
 
     public CalendarEvent(String title, String date, String status) {
         this.title = title;
@@ -23,4 +19,3 @@ public class CalendarEvent {
         this.status = status;
     }
 }
-

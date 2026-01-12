@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.sanjana.oneforall"
-        minSdk 24
+        minSdk 26        // ↑ upgraded from 24 to 26
         targetSdk 36
         versionCode 1
         versionName "1.0"
@@ -27,7 +27,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+
+    // Enable Java 8+ desugaring (already mostly included with Java 11, safe to leave)
+    // This allows some java.time APIs on lower API levels too, but now minSdk=26, so not needed.
 }
+
 
 dependencies {
     // AndroidX and Material

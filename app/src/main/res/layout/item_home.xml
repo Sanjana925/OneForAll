@@ -29,6 +29,7 @@
                 android:layout_height="wrap_content"
                 android:text="Title"
                 android:textSize="16sp"
+                android:textStyle="bold"
                 android:textColor="@android:color/black"/>
 
             <ImageButton
@@ -86,13 +87,22 @@
             android:textColor="#555555"
             android:layout_marginTop="4dp"/>
 
-        <!-- Progress Bar + + Button -->
+        <!-- Progress Bar + - Buttons -->
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center_vertical">
+            <!-- DECREASE -->
+            <ImageButton
+                android:id="@+id/btnDecreaseProgress"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_remove"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Decrease Progress"
+                android:layout_marginStart="8dp"/>
 
             <ProgressBar
                 android:id="@+id/itemProgress"
@@ -104,6 +114,8 @@
                 android:max="100"
                 android:progressTint="@color/purple_500"/>
 
+
+            <!-- INCREASE -->
             <ImageButton
                 android:id="@+id/btnIncreaseProgress"
                 android:layout_width="36dp"
@@ -111,7 +123,7 @@
                 android:src="@drawable/ic_add"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Increase Progress"
-                android:layout_marginStart="8dp"/>
+                android:layout_marginStart="4dp"/>
         </LinearLayout>
 
     </LinearLayout>

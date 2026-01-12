@@ -5,16 +5,16 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
-
 @Database(
         entities = {
                 Category.class,
                 Item.class,
                 ListFolder.class,
                 ListItem.class,
-                CalendarEvent.class   // <- Add this
+                CalendarEvent.class,
+                DailyProgress.class      // <-- ADD THIS
         },
-        version = 1  // <- Increment version because we added a new table
+        version = 3 // <-- increment version
 )
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -26,6 +26,9 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract ListItemDao listItemDao();
     public abstract CalendarEventDao calendarEventDao();
 
+    // <-- Add DAO for daily progress
+    public abstract DailyProgressDao dailyProgressDao();
+
     public static AppDatabase getInstance(Context context) {
         if (instance == null) {
             synchronized (AppDatabase.class) {
@@ -35,7 +38,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class,
                                     "oneforall_db"
                             )
-                            .fallbackToDestructiveMigration() // This will recreate DB on version change
+                            .fallbackToDestructiveMigration() // Will reset DB on version change
                             .build();
                 }
             }

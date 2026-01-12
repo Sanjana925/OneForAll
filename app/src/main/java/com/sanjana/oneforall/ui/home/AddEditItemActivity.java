@@ -3,29 +3,15 @@ package com.sanjana.oneforall.ui.home;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ProgressBar;
-import android.widget.Spinner;
-import android.widget.Toast;
-
+import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.sanjana.oneforall.R;
-import com.sanjana.oneforall.database.AppDatabase;
-import com.sanjana.oneforall.database.CalendarEvent;
-import com.sanjana.oneforall.database.Category;
-import com.sanjana.oneforall.database.Item;
+import com.sanjana.oneforall.database.*;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Locale;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,20 +21,18 @@ public class AddEditItemActivity extends AppCompatActivity {
     private Spinner spinnerCategory;
     private Button btnWatching, btnCompleted, btnOnHold, btnDropped, btnPlan;
     private Button btnSave, btnDelete;
-    private ImageButton btnIncreaseProgress, btnDecreaseProgress;
-    private ImageButton btnStartDate, btnEndDate;
-    private ProgressBar progressBarEdit;
+    private ImageButton btnIncreaseProgress, btnDecreaseProgress, btnStartDate, btnEndDate;
+    private ProgressBar progressBar;
 
     private AppDatabase db;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+
     private List<Category> categories = new ArrayList<>();
     private int selectedCategoryId;
-    private String selectedStatus = "Watching";
+    private String selectedStatus = "Plan to Watch";
 
     private boolean isEditMode = false;
     private Item existingItem;
-
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -57,7 +41,24 @@ public class AddEditItemActivity extends AppCompatActivity {
 
         db = AppDatabase.getInstance(this);
 
-        // Views
+        bindViews();
+        setupStatusButtons();
+        setupProgressButtons();
+        setupDatePickers();
+        loadCategories();
+
+        if (getIntent().hasExtra("itemId")) {
+            isEditMode = true;
+            btnDelete.setVisibility(View.VISIBLE);
+            loadItem(getIntent().getIntExtra("itemId", -1));
+        }
+
+        btnSave.setOnClickListener(v -> saveItem());
+        btnDelete.setOnClickListener(v -> deleteItem());
+    }
+
+    // ---------------------- BIND ----------------------
+    private void bindViews() {
         editTitle = findViewById(R.id.editItemTitle);
         editCurrent = findViewById(R.id.editCurrentProgress);
         editTotal = findViewById(R.id.editTotalProgress);
@@ -74,59 +75,43 @@ public class AddEditItemActivity extends AppCompatActivity {
         btnDropped = findViewById(R.id.btnDropped);
         btnPlan = findViewById(R.id.btnPlan);
 
-        btnSave = findViewById(R.id.btnSave);
-        btnDelete = findViewById(R.id.btnDelete);
-
         btnIncreaseProgress = findViewById(R.id.btnIncreaseProgress);
         btnDecreaseProgress = findViewById(R.id.btnDecreaseProgress);
         btnStartDate = findViewById(R.id.btnStartDate);
         btnEndDate = findViewById(R.id.btnEndDate);
-        progressBarEdit = findViewById(R.id.itemProgressBar);
 
-        setupStatusButtons();
-        setupProgressButtons();
-        setupDatePickers();
-        loadCategories();
+        btnSave = findViewById(R.id.btnSave);
+        btnDelete = findViewById(R.id.btnDelete);
 
-        if (getIntent().hasExtra("itemId")) {
-            int id = getIntent().getIntExtra("itemId", -1);
-            loadItem(id);
-            isEditMode = true;
-            btnDelete.setVisibility(View.VISIBLE);
-        } else {
-            btnDelete.setVisibility(View.GONE);
-        }
-
-        btnSave.setOnClickListener(v -> saveItem());
-        btnDelete.setOnClickListener(v -> deleteItem());
+        progressBar = findViewById(R.id.itemProgressBar);
     }
 
-    // ---------------------- STATUS BUTTONS ----------------------
+    // ---------------------- STATUS ----------------------
     private void setupStatusButtons() {
-        View.OnClickListener statusClick = v -> {
-            btnWatching.setSelected(false);
-            btnCompleted.setSelected(false);
-            btnOnHold.setSelected(false);
-            btnDropped.setSelected(false);
-            btnPlan.setSelected(false);
-
+        View.OnClickListener l = v -> {
+            clearStatusSelection();
             v.setSelected(true);
 
             if (v == btnWatching) selectedStatus = "Watching";
             else if (v == btnCompleted) selectedStatus = "Completed";
             else if (v == btnOnHold) selectedStatus = "On-Hold";
             else if (v == btnDropped) selectedStatus = "Dropped";
-            else if (v == btnPlan) selectedStatus = "Plan to Watch";
-
-            // Update calendar for current date
-            addOrUpdateCalendarEvent(selectedStatus);
+            else selectedStatus = "Plan to Watch";
         };
 
-        btnWatching.setOnClickListener(statusClick);
-        btnCompleted.setOnClickListener(statusClick);
-        btnOnHold.setOnClickListener(statusClick);
-        btnDropped.setOnClickListener(statusClick);
-        btnPlan.setOnClickListener(statusClick);
+        btnWatching.setOnClickListener(l);
+        btnCompleted.setOnClickListener(l);
+        btnOnHold.setOnClickListener(l);
+        btnDropped.setOnClickListener(l);
+        btnPlan.setOnClickListener(l);
+    }
+
+    private void clearStatusSelection() {
+        btnWatching.setSelected(false);
+        btnCompleted.setSelected(false);
+        btnOnHold.setSelected(false);
+        btnDropped.setSelected(false);
+        btnPlan.setSelected(false);
     }
 
     // ---------------------- PROGRESS ----------------------
@@ -136,65 +121,99 @@ public class AddEditItemActivity extends AppCompatActivity {
     }
 
     private void changeProgress(boolean increase) {
-        int current = parseInt(editCurrent.getText().toString().trim());
-        int total = parseInt(editTotal.getText().toString().trim());
+        int current = parseInt(editCurrent.getText().toString());
+        int total = parseInt(editTotal.getText().toString());
+        int old = current;
 
         if (increase && current < total) current++;
         if (!increase && current > 0) current--;
 
         editCurrent.setText(String.valueOf(current));
-        progressBarEdit.setProgress(current);
+        progressBar.setMax(total);
+        progressBar.setProgress(current);
 
-        String newStatus;
-        if (current >= total) {
-            newStatus = "Completed";
-        } else if (current > 0) {
-            newStatus = "Watching";
-        } else {
-            newStatus = null;
+        String title = editTitle.getText().toString().trim();
+        String today = LocalDate.now().toString();
+
+        // ------------------ STARTED ------------------
+        if (old == 0 && current == 1) {
+            String start = editStart.getText().toString().trim();
+            if (start.isEmpty()) start = today;
+            editStart.setText(start);
+            addCalendarEvent(start, title + " (Started)", "Started");
+            selectedStatus = "Watching";
         }
 
-        if (newStatus != null) {
-            selectedStatus = newStatus;
-            updateStatusButtons(newStatus);
-            addOrUpdateCalendarEvent(newStatus); // Use current date
-        } else {
-            removeCalendarEvent(); // Remove for current date
+        // ------------------ DAILY PROGRESS ------------------
+        if (current > 0 && current < total) {
+            final int finalCurrent = current;
+            executor.execute(() -> {
+                int itemId = isEditMode ? existingItem.id : 0;
+                DailyProgress dp = db.dailyProgressDao().getByItemAndDate(itemId, today);
+                if (dp == null) {
+                    dp = new DailyProgress(itemId, today, finalCurrent, finalCurrent);
+                    db.dailyProgressDao().insert(dp);
+                } else {
+                    dp.lastEp = finalCurrent;
+                    if (dp.firstEp > finalCurrent) dp.firstEp = finalCurrent;
+                    db.dailyProgressDao().update(dp);
+                }
+
+                // ------------------ WATCHING EVENT ------------------
+                if (dp.firstEp > 0) {
+                    addOrUpdateWatchingEvent(today, title, dp.firstEp, dp.lastEp);
+                }
+            });
+
+            selectedStatus = "Watching";
         }
+
+        // ------------------ ENDED ------------------
+        if (current == total && total > 0) {
+            removeWatchingEventByPrefix(today, title);
+            addCalendarEvent(today, title + " (Ended)", "Completed");
+            selectedStatus = "Completed";
+        }
+
+        // ------------------ DECREASE ------------------
+        if (!increase) {
+            if (old == total && current < total) removeCalendarEvent(today, title + " (Ended)");
+            if (current == 0) {
+                String start = editStart.getText().toString().trim();
+                removeCalendarEvent(start, title + " (Started)");
+                removeWatchingEventByPrefix(today, title);
+                selectedStatus = "Plan to Watch";
+            }
+        }
+
+        updateStatusButtons(selectedStatus);
     }
 
     private void updateStatusButtons(String status) {
-        btnWatching.setSelected(false);
-        btnCompleted.setSelected(false);
-        btnOnHold.setSelected(false);
-        btnDropped.setSelected(false);
-        btnPlan.setSelected(false);
-
+        clearStatusSelection();
         switch (status) {
             case "Watching": btnWatching.setSelected(true); break;
             case "Completed": btnCompleted.setSelected(true); break;
             case "On-Hold": btnOnHold.setSelected(true); break;
             case "Dropped": btnDropped.setSelected(true); break;
-            case "Plan to Watch": btnPlan.setSelected(true); break;
+            default: btnPlan.setSelected(true);
         }
     }
 
-    // ---------------------- DATE PICKERS ----------------------
+    // ---------------------- DATES ----------------------
     private void setupDatePickers() {
         btnStartDate.setOnClickListener(v -> showDatePicker(editStart));
         btnEndDate.setOnClickListener(v -> showDatePicker(editEnd));
     }
 
-    private void showDatePicker(EditText editText) {
-        Calendar calendar = Calendar.getInstance();
-        int y = calendar.get(Calendar.YEAR);
-        int m = calendar.get(Calendar.MONTH);
-        int d = calendar.get(Calendar.DAY_OF_MONTH);
-
-        DatePickerDialog dialog = new DatePickerDialog(this,
-                (view, year, month, day) -> editText.setText(String.format("%04d-%02d-%02d", year, month + 1, day)),
-                y, m, d);
-        dialog.show();
+    private void showDatePicker(EditText target) {
+        Calendar c = Calendar.getInstance();
+        new DatePickerDialog(this,
+                (v, y, m, d) -> target.setText(String.format("%04d-%02d-%02d", y, m + 1, d)),
+                c.get(Calendar.YEAR),
+                c.get(Calendar.MONTH),
+                c.get(Calendar.DAY_OF_MONTH)
+        ).show();
     }
 
     // ---------------------- CATEGORIES ----------------------
@@ -209,26 +228,10 @@ public class AddEditItemActivity extends AppCompatActivity {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerCategory.setAdapter(adapter);
 
-                if (!categories.isEmpty()) selectedCategoryId = categories.get(0).id;
-
                 spinnerCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                    @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                        selectedCategoryId = categories.get(position).id;
-                    }
-                    @Override public void onNothingSelected(AdapterView<?> parent) {
-                        if (!categories.isEmpty()) selectedCategoryId = categories.get(0).id;
-                    }
+                    @Override public void onItemSelected(AdapterView<?> p, View v, int i, long l) { selectedCategoryId = categories.get(i).id; }
+                    @Override public void onNothingSelected(AdapterView<?> p) {}
                 });
-
-                if (isEditMode && existingItem != null) {
-                    for (int i = 0; i < categories.size(); i++) {
-                        if (categories.get(i).id == existingItem.categoryId) {
-                            spinnerCategory.setSelection(i);
-                            selectedCategoryId = existingItem.categoryId;
-                            break;
-                        }
-                    }
-                }
             });
         });
     }
@@ -241,95 +244,99 @@ public class AddEditItemActivity extends AppCompatActivity {
         });
     }
 
-    private void fillData(Item item) {
-        editTitle.setText(item.title);
-        editCurrent.setText(String.valueOf(item.currentProgress));
-        editTotal.setText(String.valueOf(item.totalProgress));
-        editStart.setText(item.startDate);
-        editEnd.setText(item.endDate);
-        editScore.setText(String.valueOf(item.score));
-        editNotes.setText(item.notes);
+    private void fillData(Item i) {
+        editTitle.setText(i.title);
+        editCurrent.setText(String.valueOf(i.currentProgress));
+        editTotal.setText(String.valueOf(i.totalProgress));
+        editStart.setText(i.startDate);
+        editEnd.setText(i.endDate);
+        editScore.setText(String.valueOf(i.score));
+        editNotes.setText(i.notes);
 
-        progressBarEdit.setMax(item.totalProgress);
-        progressBarEdit.setProgress(item.currentProgress);
+        progressBar.setMax(i.totalProgress);
+        progressBar.setProgress(i.currentProgress);
 
-        updateStatusButtons(item.status);
-        selectedStatus = item.status;
+        selectedStatus = i.status;
+        updateStatusButtons(i.status);
     }
 
-    // ---------------------- SAVE / DELETE ----------------------
+    // ---------------------- SAVE ----------------------
     private void saveItem() {
         String title = editTitle.getText().toString().trim();
         if (title.isEmpty()) { Toast.makeText(this, "Enter title", Toast.LENGTH_SHORT).show(); return; }
 
-        int current = parseInt(editCurrent.getText().toString().trim());
-        int total = parseInt(editTotal.getText().toString().trim());
-        int score = parseInt(editScore.getText().toString().trim());
-        String start = editStart.getText().toString().trim();
-        String end = editEnd.getText().toString().trim();
-        String notes = editNotes.getText().toString().trim();
+        int current = parseInt(editCurrent.getText().toString());
+        int total = parseInt(editTotal.getText().toString());
 
-        Item item = new Item(title, selectedCategoryId, selectedStatus, current, total, start, end, score, notes);
+        Item item = new Item(title, selectedCategoryId, selectedStatus, current, total,
+                editStart.getText().toString().trim(), editEnd.getText().toString().trim(),
+                parseInt(editScore.getText().toString()), editNotes.getText().toString().trim());
 
         executor.execute(() -> {
             if (isEditMode) {
                 item.id = existingItem.id;
                 db.itemDao().update(item);
-                removeCalendarEvent(); // Remove old event for today
             } else {
-                db.itemDao().insert(item);
+                long id = db.itemDao().insert(item);
+                item.id = (int) id;
             }
 
-            if (selectedStatus.equals("Watching") || selectedStatus.equals("Completed")) {
-                addOrUpdateCalendarEvent(selectedStatus); // For today
-            }
+            // Calendar events
+            if (current > 0) addCalendarEvent(item.startDate, title + " (Started)", "Started");
+            if (current >= total && total > 0) addCalendarEvent(item.endDate, title + " (Ended)", "Completed");
 
             runOnUiThread(this::finish);
         });
     }
 
+    // ---------------------- DELETE ----------------------
     private void deleteItem() {
-        if (existingItem != null) {
-            executor.execute(() -> {
-                db.itemDao().delete(existingItem);
-                removeCalendarEvent(); // Remove today
-                runOnUiThread(this::finish);
-            });
+        if (existingItem == null) return;
+
+        executor.execute(() -> {
+            db.itemDao().delete(existingItem);
+            removeCalendarEvent(existingItem.startDate, existingItem.title + " (Started)");
+            removeCalendarEvent(existingItem.endDate, existingItem.title + " (Ended)");
+            removeWatchingEventByPrefix(LocalDate.now().toString(), existingItem.title);
+            runOnUiThread(this::finish);
+        });
+    }
+
+    // ---------------------- CALENDAR ----------------------
+    private void addOrUpdateWatchingEvent(String date, String title, int firstEp, int lastEp) {
+        if (date == null || date.isEmpty()) return;
+
+        String prefix = title + " (Watching)";
+        CalendarEvent existing = db.calendarEventDao().getEventByTitleAndDatePrefix(prefix, date);
+
+        String newTitle = prefix + " " + (lastEp - firstEp + 1) + " eps (" + firstEp + "-" + lastEp + ")";
+
+        if (existing == null) {
+            db.calendarEventDao().insert(new CalendarEvent(newTitle, date, "Watching"));
+        } else {
+            existing.title = newTitle;
+            db.calendarEventDao().update(existing);
         }
     }
 
-    // ---------------------- HELPER: PARSE ----------------------
-    private int parseInt(String s) {
-        try { return Integer.parseInt(s); } catch (NumberFormatException e) { return 0; }
+    private void addCalendarEvent(String date, String title, String status) {
+        if (date == null || date.isEmpty()) return;
+        CalendarEvent existing = db.calendarEventDao().getEventByTitleAndDate(title, date);
+        if (existing == null) db.calendarEventDao().insert(new CalendarEvent(title, date, status));
     }
 
-    // ---------------------- CALENDAR HELPERS ----------------------
-    private void addOrUpdateCalendarEvent(String status) {
-        String title = editTitle.getText().toString().trim();
-        if (title.isEmpty()) return;
-
-        String today = dateFormat.format(Calendar.getInstance().getTime());
-
-        executor.execute(() -> {
-            CalendarEvent existing = db.calendarEventDao().getEventByTitleAndDate(title, today);
-            if (existing != null) db.calendarEventDao().delete(existing);
-
-            if (status.equals("Watching") || status.equals("Completed")) {
-                CalendarEvent newEvent = new CalendarEvent(title, today, status);
-                db.calendarEventDao().insert(newEvent);
-            }
-        });
+    private void removeCalendarEvent(String date, String title) {
+        if (date == null || date.isEmpty()) return;
+        CalendarEvent e = db.calendarEventDao().getEventByTitleAndDate(title, date);
+        if (e != null) db.calendarEventDao().delete(e);
     }
 
-    private void removeCalendarEvent() {
-        String title = editTitle.getText().toString().trim();
-        if (title.isEmpty()) return;
-
-        String today = dateFormat.format(Calendar.getInstance().getTime());
-
-        executor.execute(() -> {
-            CalendarEvent event = db.calendarEventDao().getEventByTitleAndDate(title, today);
-            if (event != null) db.calendarEventDao().delete(event);
-        });
+    private void removeWatchingEventByPrefix(String date, String title) {
+        if (date == null || date.isEmpty()) return;
+        String prefix = title + " (Watching)";
+        CalendarEvent e = db.calendarEventDao().getEventByTitleAndDatePrefix(prefix, date);
+        if (e != null) db.calendarEventDao().delete(e);
     }
+
+    private int parseInt(String s) { try { return Integer.parseInt(s); } catch (Exception e) { return 0; } }
 }
