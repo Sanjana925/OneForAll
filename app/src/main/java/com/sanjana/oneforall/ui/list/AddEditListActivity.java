@@ -3,8 +3,10 @@ package com.sanjana.oneforall.ui.list;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.Html;
 import android.text.Spannable;
+import android.text.TextWatcher;
 import android.text.style.StyleSpan;
 import android.text.style.UnderlineSpan;
 import android.widget.*;
@@ -23,7 +25,7 @@ public class AddEditListActivity extends AppCompatActivity {
     private EditText editTitle, editContent;
     private Button btnSave;
 
-    private ImageButton btnBold, btnItalic, btnUnderline, btnBullet, btnTask;
+    private ImageButton btnBold, btnItalic, btnUnderline, btnBullet, btnTask, btnNumbered;
 
     private AppDatabase db;
     private List<ListFolder> folders = new ArrayList<>();
@@ -45,6 +47,7 @@ public class AddEditListActivity extends AppCompatActivity {
         btnUnderline = findViewById(R.id.btnUnderline);
         btnBullet = findViewById(R.id.btnBullet);
         btnTask = findViewById(R.id.btnTask);
+        btnNumbered = findViewById(R.id.btnNumbered);
 
         db = AppDatabase.getInstance(this);
 
@@ -61,11 +64,48 @@ public class AddEditListActivity extends AppCompatActivity {
 
         btnSave.setOnClickListener(v -> saveItem());
 
+        // Formatting buttons
         btnBold.setOnClickListener(v -> applyStyle(Typeface.BOLD));
         btnItalic.setOnClickListener(v -> applyStyle(Typeface.ITALIC));
         btnUnderline.setOnClickListener(v -> applyUnderline());
         btnBullet.setOnClickListener(v -> insertAtCursor("\n• "));
         btnTask.setOnClickListener(v -> insertAtCursor("\n☐ "));
+        btnNumbered.setOnClickListener(v -> insertNumberedList());
+
+        // Auto continuation for bullets, numbers, tasks
+        editContent.addTextChangedListener(new TextWatcher() {
+            private boolean isEditing = false;
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (isEditing) return;
+                isEditing = true;
+
+                int cursor = editContent.getSelectionStart();
+                if (cursor > 0 && cursor <= s.length()) {
+                    if (s.charAt(cursor - 1) == '\n') {
+                        String textBefore = s.subSequence(0, cursor - 1).toString();
+                        String[] lines = textBefore.split("\n");
+                        String lastLine = lines.length > 0 ? lines[lines.length - 1] : "";
+
+                        if (lastLine.matches("•\\s.*")) {
+                            s.insert(cursor, "• ");
+                        } else if (lastLine.matches("☐\\s.*")) {
+                            s.insert(cursor, "☐ ");
+                        } else if (lastLine.matches("\\d+\\.\\s.*")) {
+                            int lastNumber = 1;
+                            try {
+                                lastNumber = Integer.parseInt(lastLine.split("\\.")[0].trim());
+                            } catch (Exception ignored) {}
+                            s.insert(cursor, (lastNumber + 1) + ". ");
+                        }
+                    }
+                }
+
+                isEditing = false;
+            }
+        });
     }
 
     // ---------- Formatting ----------
@@ -73,32 +113,36 @@ public class AddEditListActivity extends AppCompatActivity {
         int start = editContent.getSelectionStart();
         int end = editContent.getSelectionEnd();
         if (start >= end) return;
-
-        editContent.getText().setSpan(
-                new StyleSpan(style),
-                start,
-                end,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
+        editContent.getText().setSpan(new StyleSpan(style), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
     private void applyUnderline() {
         int start = editContent.getSelectionStart();
         int end = editContent.getSelectionEnd();
         if (start >= end) return;
-
-        editContent.getText().setSpan(
-                new UnderlineSpan(),
-                start,
-                end,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
+        editContent.getText().setSpan(new UnderlineSpan(), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
     private void insertAtCursor(String text) {
         int pos = editContent.getSelectionStart();
         if (pos < 0) pos = 0;
         editContent.getText().insert(pos, text);
+    }
+
+    private void insertNumberedList() {
+        int pos = editContent.getSelectionStart();
+        if (pos < 0) pos = 0;
+
+        String content = editContent.getText().toString();
+        int lineNumber = 1;
+        if (pos > 0) {
+            String before = content.substring(0, pos);
+            String[] lines = before.split("\n");
+            for (String l : lines) {
+                if (l.matches("\\d+\\.\\s.*")) lineNumber++;
+            }
+        }
+        editContent.getText().insert(pos, "\n" + lineNumber + ". ");
     }
 
     // ---------- Database ----------
@@ -146,9 +190,7 @@ public class AddEditListActivity extends AppCompatActivity {
             return;
         }
 
-        String html = Html.toHtml(editContent.getText(),
-                Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE);
-
+        String html = Html.toHtml(editContent.getText(), Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE);
         int folderId = folders.get(spinnerFolder.getSelectedItemPosition()).id;
 
         new Thread(() -> {
@@ -158,9 +200,7 @@ public class AddEditListActivity extends AppCompatActivity {
                 existingItem.folderId = folderId;
                 db.listItemDao().update(existingItem);
             } else {
-                db.listItemDao().insert(
-                        new ListItem(folderId, title, html, System.currentTimeMillis())
-                );
+                db.listItemDao().insert(new ListItem(folderId, title, html, System.currentTimeMillis()));
             }
             runOnUiThread(this::finish);
         }).start();

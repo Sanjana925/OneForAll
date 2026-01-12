@@ -74,6 +74,13 @@
             android:layout_height="48dp"
             android:src="@drawable/ic_underline"
             android:background="?attr/selectableItemBackgroundBorderless"/>
+        <ImageButton
+            android:id="@+id/btnNumbered"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_number"
+            android:background="?attr/selectableItemBackgroundBorderless"/>
+
 
         <ImageButton
             android:id="@+id/btnBullet"

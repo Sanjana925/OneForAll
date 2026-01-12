@@ -12,14 +12,14 @@ public class ListItem {
     public int folderId;      // belongs to folder
     public String title;
     public String content;    // free text / bullets
-    public long updatedAt;
-    public long timestamp;
+    public long updatedAt;    // last edited
+    public long timestamp;    // creation time
 
-
-    public ListItem(int folderId, String title, String content, long updatedAt) {
+    public ListItem(int folderId, String title, String content, long timestamp) {
         this.folderId = folderId;
         this.title = title;
         this.content = content;
-        this.updatedAt = updatedAt;
+        this.updatedAt = timestamp;
+        this.timestamp = timestamp;
     }
 }

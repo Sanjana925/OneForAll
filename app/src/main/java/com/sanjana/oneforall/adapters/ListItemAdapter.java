@@ -2,11 +2,14 @@ package com.sanjana.oneforall.adapters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
+import android.text.Html;
+import android.text.Spanned;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -44,7 +47,15 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ListIt
     public void onBindViewHolder(@NonNull ListItemViewHolder holder, int position) {
         ListItem item = items.get(position);
         holder.tvTitle.setText(item.title);
-        holder.tvContent.setText(item.content);
+
+        // ✅ Rich text preview
+        Spanned spannedContent;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            spannedContent = Html.fromHtml(item.content, Html.FROM_HTML_MODE_LEGACY);
+        } else {
+            spannedContent = Html.fromHtml(item.content);
+        }
+        holder.tvContent.setText(spannedContent);
 
         // Delete
         holder.btnDelete.setOnClickListener(v -> {

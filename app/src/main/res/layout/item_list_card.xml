@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -43,7 +42,16 @@
             android:layout_height="wrap_content"
             android:paddingTop="4dp"
             android:textColor="@android:color/black"
-            android:maxLines="3"
+            android:maxLines="5"
             android:ellipsize="end"/>
+
+        <!-- Last edited -->
+        <TextView
+            android:id="@+id/tvLastEdited"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#777"
+            android:layout_marginTop="2dp"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

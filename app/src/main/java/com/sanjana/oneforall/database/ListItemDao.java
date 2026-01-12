@@ -23,7 +23,6 @@ public interface ListItemDao {
     @Delete
     void delete(ListItem item);
 
-    // ✅ Add this method
     @Query("SELECT * FROM ListItem WHERE id = :itemId LIMIT 1")
     ListItem getById(int itemId);
 
