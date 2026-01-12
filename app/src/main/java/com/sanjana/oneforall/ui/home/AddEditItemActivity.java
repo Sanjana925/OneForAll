@@ -29,6 +29,7 @@ public class AddEditItemActivity extends AppCompatActivity {
 
     private List<Category> categories = new ArrayList<>();
     private int selectedCategoryId;
+    private int selectedCategoryColor = 0xFF2196F3; // default if no category
     private String selectedStatus = "Plan to Watch";
 
     private boolean isEditMode = false;
@@ -135,14 +136,12 @@ public class AddEditItemActivity extends AppCompatActivity {
         String title = editTitle.getText().toString().trim();
         String today = LocalDate.now().toString();
 
-        int categoryColor = 0xFF2196F3; // Example color. You can fetch from spinner selected category
-
         // ------------------ STARTED ------------------
         if (old == 0 && current == 1) {
             String start = editStart.getText().toString().trim();
             if (start.isEmpty()) start = today;
             editStart.setText(start);
-            addCalendarEvent(start, title + " (Started)", 1, 1, 1, categoryColor);
+            addCalendarEvent(start, title + " (Started)", 1, 1, 1, selectedCategoryColor);
             selectedStatus = "Watching";
         }
 
@@ -161,19 +160,18 @@ public class AddEditItemActivity extends AppCompatActivity {
                     db.dailyProgressDao().update(dp);
                 }
 
-                // ------------------ WATCHING EVENT ------------------
+                // Watching event
                 if (dp.firstEp > 0) {
-                    addOrUpdateWatchingEvent(today, title, dp.firstEp, dp.lastEp, categoryColor);
+                    addOrUpdateWatchingEvent(today, title, dp.firstEp, dp.lastEp, selectedCategoryColor);
                 }
             });
-
             selectedStatus = "Watching";
         }
 
         // ------------------ ENDED ------------------
         if (current == total && total > 0) {
             removeWatchingEventByPrefix(today, title);
-            addCalendarEvent(today, title + " (Ended)", 0, 0, 0, categoryColor);
+            addCalendarEvent(today, title + " (Ended)", 0, 0, 0, selectedCategoryColor);
             selectedStatus = "Completed";
         }
 
@@ -226,13 +224,22 @@ public class AddEditItemActivity extends AppCompatActivity {
                 List<String> names = new ArrayList<>();
                 for (Category c : categories) names.add(c.name);
 
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, names);
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                        android.R.layout.simple_spinner_item, names);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerCategory.setAdapter(adapter);
 
                 spinnerCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                    @Override public void onItemSelected(AdapterView<?> p, View v, int i, long l) { selectedCategoryId = categories.get(i).id; }
-                    @Override public void onNothingSelected(AdapterView<?> p) {}
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                        selectedCategoryId = categories.get(position).id;
+                        selectedCategoryColor = categories.get(position).color;
+                        // Update start/end color
+                        editStart.setTextColor(selectedCategoryColor);
+                        editEnd.setTextColor(selectedCategoryColor);
+                    }
+
+                    @Override public void onNothingSelected(AdapterView<?> parent) { }
                 });
             });
         });
@@ -260,6 +267,15 @@ public class AddEditItemActivity extends AppCompatActivity {
 
         selectedStatus = i.status;
         updateStatusButtons(i.status);
+
+        // Select spinner
+        for (int j = 0; j < categories.size(); j++) {
+            if (categories.get(j).id == i.categoryId) {
+                spinnerCategory.setSelection(j);
+                selectedCategoryColor = categories.get(j).color;
+                break;
+            }
+        }
     }
 
     // ---------------------- SAVE ----------------------
@@ -269,7 +285,6 @@ public class AddEditItemActivity extends AppCompatActivity {
 
         int current = parseInt(editCurrent.getText().toString());
         int total = parseInt(editTotal.getText().toString());
-        int categoryColor = 0xFF2196F3; // example, use spinner selected color
 
         Item item = new Item(title, selectedCategoryId, selectedStatus, current, total,
                 editStart.getText().toString().trim(), editEnd.getText().toString().trim(),
@@ -284,9 +299,9 @@ public class AddEditItemActivity extends AppCompatActivity {
                 item.id = (int) id;
             }
 
-            // Calendar events
-            if (current > 0) addCalendarEvent(item.startDate, title + " (Started)", 1, 1, 1, categoryColor);
-            if (current >= total && total > 0) addCalendarEvent(item.endDate, title + " (Ended)", 0, 0, 0, categoryColor);
+            // Calendar events with selected category color
+            if (current > 0) addCalendarEvent(item.startDate, title + " (Started)", 1, 1, 1, selectedCategoryColor);
+            if (current >= total && total > 0) addCalendarEvent(item.endDate, title + " (Ended)", 0, 0, 0, selectedCategoryColor);
 
             runOnUiThread(this::finish);
         });

@@ -1,4 +1,3 @@
-// CategoryDao.java
 package com.sanjana.oneforall.database;
 
 import androidx.room.Dao;
@@ -12,12 +11,6 @@ import java.util.List;
 @Dao
 public interface CategoryDao {
 
-    @Query("SELECT * FROM Category")
-    List<Category> getAllCategories();
-
-    @Query("SELECT * FROM Category WHERE id = :id LIMIT 1")
-    Category getCategoryById(int id);
-
     @Insert
     void insert(Category category);
 
@@ -26,4 +19,12 @@ public interface CategoryDao {
 
     @Delete
     void delete(Category category);
+
+    // ✅ REQUIRED for CategoryFragment
+    @Query("SELECT * FROM Category ORDER BY name ASC")
+    List<Category> getAllCategories();
+
+    // ✅ REQUIRED for Edit Category
+    @Query("SELECT * FROM Category WHERE id = :id LIMIT 1")
+    Category getCategoryById(int id);
 }

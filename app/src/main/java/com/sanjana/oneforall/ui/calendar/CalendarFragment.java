@@ -126,80 +126,22 @@ public class CalendarFragment extends Fragment {
                 tvTitle.setText(e.title);
                 tvTitle.setTextSize(16f);
                 tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
-                tvTitle.setTextColor(e.categoryColor);
+                tvTitle.setTextColor(e.categoryColor); // ✅ category color applied
 
                 TextView tvWatched = new TextView(requireContext());
                 tvWatched.setTextSize(14f);
-                tvWatched.setTextColor(0xFF333333);
+                tvWatched.setTextColor(e.categoryColor); // ✅ category color applied
 
                 TextView tvRange = new TextView(requireContext());
                 tvRange.setText("Range: Ep " + e.startEp + " - " + e.endEp);
                 tvRange.setTextSize(14f);
-                tvRange.setTextColor(0xFF555555);
+                tvRange.setTextColor(e.categoryColor); // ✅ category color applied
 
                 card.addView(tvTitle);
                 card.addView(tvWatched);
                 card.addView(tvRange);
 
                 root.addView(card);
-
-                // --- + / - buttons ---
-                LinearLayout buttons = new LinearLayout(requireContext());
-                buttons.setOrientation(LinearLayout.HORIZONTAL);
-                buttons.setPadding(0,6,0,0);
-
-                TextView btnMinus = new TextView(requireContext());
-                btnMinus.setText("-");
-                btnMinus.setTextSize(18f);
-                btnMinus.setPadding(20,0,20,0);
-                btnMinus.setBackgroundColor(0xFFE0E0E0);
-
-                TextView btnPlus = new TextView(requireContext());
-                btnPlus.setText("+");
-                btnPlus.setTextSize(18f);
-                btnPlus.setPadding(20,0,20,0);
-                btnPlus.setBackgroundColor(0xFFE0E0E0);
-
-                buttons.addView(btnMinus);
-                buttons.addView(btnPlus);
-                card.addView(buttons);
-
-                // --- Wrap mutable variables for lambda ---
-                final DailyProgress[] dpHolder = new DailyProgress[1];
-                dpHolder[0] = db.dailyProgressDao().getByItemAndDate(e.id, cell.date);
-
-                final int[] firstEpHolder = new int[1];
-                final int[] lastEpHolder = new int[1];
-
-                firstEpHolder[0] = (dpHolder[0] != null) ? dpHolder[0].firstEp : e.startEp;
-                lastEpHolder[0] = (dpHolder[0] != null) ? dpHolder[0].lastEp : e.startEp;
-
-                tvWatched.setText("Watched: " + (lastEpHolder[0] - firstEpHolder[0] + 1) + " eps");
-
-                // + button
-                btnPlus.setOnClickListener(v -> {
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        if (lastEpHolder[0] < e.endEp) lastEpHolder[0]++;
-                        DailyProgress newDp = new DailyProgress(e.id, cell.date, firstEpHolder[0], lastEpHolder[0]);
-                        if (dpHolder[0] != null) db.dailyProgressDao().update(newDp);
-                        else db.dailyProgressDao().insert(newDp);
-                        dpHolder[0] = newDp;
-                        requireActivity().runOnUiThread(() ->
-                                tvWatched.setText("Watched: " + (lastEpHolder[0] - firstEpHolder[0] + 1) + " eps"));
-                    });
-                });
-
-                // - button
-                btnMinus.setOnClickListener(v -> {
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        if (lastEpHolder[0] > firstEpHolder[0]) lastEpHolder[0]--;
-                        DailyProgress newDp = new DailyProgress(e.id, cell.date, firstEpHolder[0], lastEpHolder[0]);
-                        db.dailyProgressDao().update(newDp);
-                        dpHolder[0] = newDp;
-                        requireActivity().runOnUiThread(() ->
-                                tvWatched.setText("Watched: " + (lastEpHolder[0] - firstEpHolder[0] + 1) + " eps"));
-                    });
-                });
             }
 
             requireActivity().runOnUiThread(() -> {

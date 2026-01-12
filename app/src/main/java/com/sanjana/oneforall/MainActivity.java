@@ -20,7 +20,7 @@ import com.sanjana.oneforall.ui.search.SearchFragment;
 import com.sanjana.oneforall.ui.calendar.CalendarFragment;
 import com.sanjana.oneforall.ui.list.ListFragment;
 import com.sanjana.oneforall.ui.list.AddEditListActivity;
-import com.sanjana.oneforall.ui.category.AddCategoryActivity;
+import com.sanjana.oneforall.ui.category.AddEditCategoryActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(this, AddEditItemActivity.class));
 
             } else if (current instanceof CategoryFragment) {
-                startActivity(new Intent(this, AddCategoryActivity.class));
+                startActivity(new Intent(this, AddEditCategoryActivity.class));
 
             } else if (current instanceof ListFragment) {
                 startActivity(new Intent(this, AddEditListActivity.class)); // ✅ Launch Add/Edit List

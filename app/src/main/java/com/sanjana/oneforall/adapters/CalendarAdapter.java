@@ -72,7 +72,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
 
             TextView tvTitle = new TextView(context);
             tvTitle.setText(e.title);
-            tvTitle.setTextColor(e.categoryColor);
+            tvTitle.setTextColor(e.categoryColor); // ✅ category color applied
             tvTitle.setTextSize(13f);
             tvTitle.setSingleLine(true);
             tvTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);

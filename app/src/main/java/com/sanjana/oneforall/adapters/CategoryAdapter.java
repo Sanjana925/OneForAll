@@ -1,22 +1,22 @@
 package com.sanjana.oneforall.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.sanjana.oneforall.R;
 import com.sanjana.oneforall.database.AppDatabase;
 import com.sanjana.oneforall.database.Category;
+import com.sanjana.oneforall.ui.category.AddEditCategoryActivity;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -50,47 +50,22 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
         holder.categoryName.setText(category.name);
         holder.categoryName.setTextColor(category.color != 0 ? category.color : Color.BLACK);
 
-        // Edit button
-        holder.editButton.setOnClickListener(v -> showEditDialog(category, holder));
+        // Edit button → launch AddEditCategoryActivity with categoryId
+        holder.editButton.setOnClickListener(v -> {
+            Intent intent = new Intent(context, AddEditCategoryActivity.class);
+            intent.putExtra("categoryId", category.id);
+            context.startActivity(intent);
+        });
 
         // Delete button
         holder.deleteButton.setOnClickListener(v -> executor.execute(() -> {
             db.categoryDao().delete(category);
-
-            // Update UI on main thread safely
             holder.itemView.post(() -> {
                 categories.remove(position);
                 notifyItemRemoved(position);
                 Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show();
             });
         }));
-    }
-
-    private void showEditDialog(Category category, CategoryViewHolder holder) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Edit Category");
-
-        EditText input = new EditText(context);
-        input.setText(category.name);
-        builder.setView(input);
-
-        builder.setPositiveButton("Save", (dialog, which) -> {
-            String newName = input.getText().toString().trim();
-            if (!newName.isEmpty()) {
-                category.name = newName;
-
-                // Update in background thread
-                executor.execute(() -> {
-                    db.categoryDao().update(category);
-
-                    // Notify adapter on main thread safely
-                    holder.itemView.post(this::notifyDataSetChanged);
-                });
-            }
-        });
-
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
-        builder.show();
     }
 
     @Override
