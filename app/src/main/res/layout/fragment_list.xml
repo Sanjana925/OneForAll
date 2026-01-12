@@ -1,12 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="12dp">
 
-    <!-- Horizontal folder list -->
+    <!-- Top folder menu icon + title -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp">
+
+        <!-- Notes title at left -->
+        <TextView
+            android:id="@+id/tvNotesTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Notes"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"/>
+
+        <!-- Folder menu icon at right -->
+        <ImageButton
+            android:id="@+id/btnFolderMenu"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_folder"
+            android:contentDescription="Folder Menu"/>
+
+    </LinearLayout>
+
+    <!-- Horizontal folder pill list -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFolders"
         android:layout_width="match_parent"
@@ -14,11 +43,12 @@
         android:paddingBottom="8dp"
         android:clipToPadding="false"/>
 
-    <!-- Vertical scrollable list of cards -->
+    <!-- Vertical scrollable list of notes -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvListItems"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"/>
+
 </LinearLayout>

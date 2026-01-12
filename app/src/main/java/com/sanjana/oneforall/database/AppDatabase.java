@@ -12,9 +12,9 @@ import androidx.room.RoomDatabase;
                 ListFolder.class,
                 ListItem.class,
                 CalendarEvent.class,
-                DailyProgress.class      // <-- ADD THIS
+                DailyProgress.class
         },
-        version = 3 // <-- increment version
+        version = 1
 )
 public abstract class AppDatabase extends RoomDatabase {
 

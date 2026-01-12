@@ -9,13 +9,28 @@ public class CalendarEvent {
     @PrimaryKey(autoGenerate = true)
     public int id;
 
-    public String title;    // e.g., "My Show (Watching) 3 eps (1-3)"
-    public String date;     // yyyy-MM-dd
-    public String status;   // "Started", "Watching", "Completed"
+    public String title;       // Drama title
+    public String date;        // yyyy-MM-dd
 
-    public CalendarEvent(String title, String date, String status) {
+    public int episodeCount;   // X
+    public int startEp;        // Y
+    public int endEp;          // Z
+
+    public int categoryColor;  // same color as category
+
+    public CalendarEvent(
+            String title,
+            String date,
+            int episodeCount,
+            int startEp,
+            int endEp,
+            int categoryColor
+    ) {
         this.title = title;
         this.date = date;
-        this.status = status;
+        this.episodeCount = episodeCount;
+        this.startEp = startEp;
+        this.endEp = endEp;
+        this.categoryColor = categoryColor;
     }
 }

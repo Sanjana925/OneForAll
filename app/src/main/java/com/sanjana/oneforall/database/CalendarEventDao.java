@@ -19,15 +19,18 @@ public interface CalendarEventDao {
 
     @Delete
     void delete(CalendarEvent event);
+    @Query("DELETE FROM CalendarEvent WHERE id = :itemId")
+    void deleteByItemId(int itemId);
 
     @Query("SELECT * FROM CalendarEvent WHERE title = :title AND date = :date LIMIT 1")
     CalendarEvent getEventByTitleAndDate(String title, String date);
 
-    // ---------- NEW: get all events by date ----------
     @Query("SELECT * FROM CalendarEvent WHERE date = :date")
     List<CalendarEvent> getEventsByDate(String date);
 
-    // Optional: for prefix search (for Watching event)
     @Query("SELECT * FROM CalendarEvent WHERE title LIKE :prefix || '%' AND date = :date LIMIT 1")
     CalendarEvent getEventByTitleAndDatePrefix(String prefix, String date);
+
+    @Query("SELECT * FROM CalendarEvent WHERE title = :title")
+    List<CalendarEvent> getEventsByTitle(String title);
 }

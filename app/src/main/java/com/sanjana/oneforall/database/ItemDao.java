@@ -33,4 +33,8 @@ public interface ItemDao {
 
     @Query("SELECT * FROM Item WHERE categoryId = :catId AND status = :status")
     List<Item> getItemsByCategoryAndStatus(int catId, String status);
+
+    // ----------------- NEW -----------------
+    @Query("SELECT * FROM Item WHERE title = :title LIMIT 1")
+    Item getItemByTitle(String title);
 }

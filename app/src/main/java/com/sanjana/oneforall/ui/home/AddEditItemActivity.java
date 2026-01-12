@@ -135,12 +135,14 @@ public class AddEditItemActivity extends AppCompatActivity {
         String title = editTitle.getText().toString().trim();
         String today = LocalDate.now().toString();
 
+        int categoryColor = 0xFF2196F3; // Example color. You can fetch from spinner selected category
+
         // ------------------ STARTED ------------------
         if (old == 0 && current == 1) {
             String start = editStart.getText().toString().trim();
             if (start.isEmpty()) start = today;
             editStart.setText(start);
-            addCalendarEvent(start, title + " (Started)", "Started");
+            addCalendarEvent(start, title + " (Started)", 1, 1, 1, categoryColor);
             selectedStatus = "Watching";
         }
 
@@ -161,7 +163,7 @@ public class AddEditItemActivity extends AppCompatActivity {
 
                 // ------------------ WATCHING EVENT ------------------
                 if (dp.firstEp > 0) {
-                    addOrUpdateWatchingEvent(today, title, dp.firstEp, dp.lastEp);
+                    addOrUpdateWatchingEvent(today, title, dp.firstEp, dp.lastEp, categoryColor);
                 }
             });
 
@@ -171,7 +173,7 @@ public class AddEditItemActivity extends AppCompatActivity {
         // ------------------ ENDED ------------------
         if (current == total && total > 0) {
             removeWatchingEventByPrefix(today, title);
-            addCalendarEvent(today, title + " (Ended)", "Completed");
+            addCalendarEvent(today, title + " (Ended)", 0, 0, 0, categoryColor);
             selectedStatus = "Completed";
         }
 
@@ -267,6 +269,7 @@ public class AddEditItemActivity extends AppCompatActivity {
 
         int current = parseInt(editCurrent.getText().toString());
         int total = parseInt(editTotal.getText().toString());
+        int categoryColor = 0xFF2196F3; // example, use spinner selected color
 
         Item item = new Item(title, selectedCategoryId, selectedStatus, current, total,
                 editStart.getText().toString().trim(), editEnd.getText().toString().trim(),
@@ -282,8 +285,8 @@ public class AddEditItemActivity extends AppCompatActivity {
             }
 
             // Calendar events
-            if (current > 0) addCalendarEvent(item.startDate, title + " (Started)", "Started");
-            if (current >= total && total > 0) addCalendarEvent(item.endDate, title + " (Ended)", "Completed");
+            if (current > 0) addCalendarEvent(item.startDate, title + " (Started)", 1, 1, 1, categoryColor);
+            if (current >= total && total > 0) addCalendarEvent(item.endDate, title + " (Ended)", 0, 0, 0, categoryColor);
 
             runOnUiThread(this::finish);
         });
@@ -303,26 +306,33 @@ public class AddEditItemActivity extends AppCompatActivity {
     }
 
     // ---------------------- CALENDAR ----------------------
-    private void addOrUpdateWatchingEvent(String date, String title, int firstEp, int lastEp) {
+    private void addOrUpdateWatchingEvent(String date, String title, int firstEp, int lastEp, int color) {
         if (date == null || date.isEmpty()) return;
 
         String prefix = title + " (Watching)";
         CalendarEvent existing = db.calendarEventDao().getEventByTitleAndDatePrefix(prefix, date);
 
         String newTitle = prefix + " " + (lastEp - firstEp + 1) + " eps (" + firstEp + "-" + lastEp + ")";
+        int episodeCount = lastEp - firstEp + 1;
 
         if (existing == null) {
-            db.calendarEventDao().insert(new CalendarEvent(newTitle, date, "Watching"));
+            db.calendarEventDao().insert(new CalendarEvent(newTitle, date, episodeCount, firstEp, lastEp, color));
         } else {
             existing.title = newTitle;
+            existing.episodeCount = episodeCount;
+            existing.startEp = firstEp;
+            existing.endEp = lastEp;
+            existing.categoryColor = color;
             db.calendarEventDao().update(existing);
         }
     }
 
-    private void addCalendarEvent(String date, String title, String status) {
+    private void addCalendarEvent(String date, String title, int episodeCount, int startEp, int endEp, int color) {
         if (date == null || date.isEmpty()) return;
         CalendarEvent existing = db.calendarEventDao().getEventByTitleAndDate(title, date);
-        if (existing == null) db.calendarEventDao().insert(new CalendarEvent(title, date, status));
+        if (existing == null) {
+            db.calendarEventDao().insert(new CalendarEvent(title, date, episodeCount, startEp, endEp, color));
+        }
     }
 
     private void removeCalendarEvent(String date, String title) {

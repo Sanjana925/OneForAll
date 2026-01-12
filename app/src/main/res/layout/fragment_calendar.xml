@@ -3,28 +3,61 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-  >
+    android:padding="8dp">
 
-    <!-- CalendarView (month view with default header) -->
-    <CalendarView
-        android:id="@+id/calendarView"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp">
 
-    <!-- RecyclerView for events of selected date -->
-    <TextView
-        android:layout_width="wrap_content"
+        <ImageButton
+            android:id="@+id/btnPrev"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Previous Month"
+            android:src="@android:drawable/ic_media_previous" />
+
+        <TextView
+            android:id="@+id/tvMonth"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="January 2026"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textAlignment="center" />
+
+        <ImageButton
+            android:id="@+id/btnNext"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Next Month"
+            android:src="@android:drawable/ic_media_next" />
+    </LinearLayout>
+
+    <GridLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/events"
-        android:textStyle="bold"
-        android:textSize="16sp"
-        android:layout_marginBottom="8dp"/>
+        android:columnCount="7">
+
+
+        <TextView android:text="Sun" style="@style/WeekDay"/>
+        <TextView android:text="Mon" style="@style/WeekDay"/>
+        <TextView android:text="Tue" style="@style/WeekDay"/>
+        <TextView android:text="Wed" style="@style/WeekDay"/>
+        <TextView android:text="Thu" style="@style/WeekDay"/>
+        <TextView android:text="Fri" style="@style/WeekDay"/>
+        <TextView android:text="Sat" style="@style/WeekDay"/>
+    </GridLayout>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvEvents"
+        android:id="@+id/rvCalendar"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:paddingTop="4dp"/>
+        android:scrollbars="vertical"/>
 </LinearLayout>

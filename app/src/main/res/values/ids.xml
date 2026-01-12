@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="rvCalendar" type="id" />
+    <item name="btnPrev" type="id" />
+    <item name="tvMonth" type="id" />
+</resources>

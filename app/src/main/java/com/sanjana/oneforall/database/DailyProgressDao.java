@@ -17,6 +17,8 @@ public interface DailyProgressDao {
 
     @Delete
     void delete(DailyProgress dp);
+    @Query("DELETE FROM DailyProgress WHERE itemId = :itemId")
+    void deleteByItemId(int itemId);
 
     // Get today's progress for an item; if multiple exist (shouldn't usually happen), pick latest by id
     @Query("SELECT * FROM DailyProgress WHERE itemId = :itemId AND date = :date ORDER BY id DESC LIMIT 1")

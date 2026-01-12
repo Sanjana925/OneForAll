@@ -46,9 +46,7 @@ dependencies {
     // Room Database
     implementation libs.room.runtime
     annotationProcessor libs.room.compiler
-
-    // Kizitonwose CalendarView (Java compatible)
-    implementation libs.view
+    implementation libs.material
 
 
     // Testing
