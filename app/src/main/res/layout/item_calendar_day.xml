@@ -10,7 +10,7 @@
         android:id="@+id/tvDay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-         android:text="@string/_1"
+        android:text="@string/_1"
         android:textStyle="bold"
         android:textSize="14sp"
         android:textColor="@android:color/black" />

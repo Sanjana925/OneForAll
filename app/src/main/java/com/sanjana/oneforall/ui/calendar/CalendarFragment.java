@@ -15,16 +15,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.sanjana.oneforall.adapters.CalendarAdapter;
 import com.sanjana.oneforall.adapters.DayCell;
+import com.sanjana.oneforall.adapters.CalendarAdapter.DragData;
 import com.sanjana.oneforall.database.AppDatabase;
 import com.sanjana.oneforall.database.CalendarEvent;
-import com.sanjana.oneforall.database.DailyProgress;
 import com.sanjana.oneforall.R;
 
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 public class CalendarFragment extends Fragment {
 
@@ -67,9 +69,7 @@ public class CalendarFragment extends Fragment {
             int daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
 
             List<DayCell> cells = new ArrayList<>();
-            for (int i = 0; i < firstDayOffset; i++) {
-                cells.add(new DayCell(0));
-            }
+            for (int i = 0; i < firstDayOffset; i++) cells.add(new DayCell(0));
 
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
 
@@ -89,7 +89,13 @@ public class CalendarFragment extends Fragment {
 
             requireActivity().runOnUiThread(() -> {
                 tvMonth.setText(monthStr);
-                rvCalendar.setAdapter(new CalendarAdapter(getContext(), cells, this::showPopup));
+                CalendarAdapter adapter = new CalendarAdapter(
+                        getContext(),
+                        cells,
+                        this::showPopup,
+                        this::onDragDrop
+                );
+                rvCalendar.setAdapter(adapter);
             });
         });
     }
@@ -98,13 +104,11 @@ public class CalendarFragment extends Fragment {
         if (cell.events.isEmpty()) return;
 
         Executors.newSingleThreadExecutor().execute(() -> {
-
             LinearLayout root = new LinearLayout(requireContext());
             root.setOrientation(LinearLayout.VERTICAL);
             root.setPadding(16,16,16,16);
 
             for (CalendarEvent e : cell.events) {
-
                 LinearLayout card = new LinearLayout(requireContext());
                 card.setOrientation(LinearLayout.VERTICAL);
                 card.setPadding(14,14,14,14);
@@ -125,17 +129,18 @@ public class CalendarFragment extends Fragment {
                 TextView tvTitle = new TextView(requireContext());
                 tvTitle.setText(e.title);
                 tvTitle.setTextSize(16f);
-                tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
-                tvTitle.setTextColor(e.categoryColor); // ✅ category color applied
+                tvTitle.setTypeface(null, Typeface.BOLD);
+                tvTitle.setTextColor(e.categoryColor);
 
                 TextView tvWatched = new TextView(requireContext());
+                tvWatched.setText("Watched: " + e.episodeCount + " eps");
                 tvWatched.setTextSize(14f);
-                tvWatched.setTextColor(e.categoryColor); // ✅ category color applied
+                tvWatched.setTextColor(e.categoryColor);
 
                 TextView tvRange = new TextView(requireContext());
                 tvRange.setText("Range: Ep " + e.startEp + " - " + e.endEp);
                 tvRange.setTextSize(14f);
-                tvRange.setTextColor(e.categoryColor); // ✅ category color applied
+                tvRange.setTextColor(e.categoryColor);
 
                 card.addView(tvTitle);
                 card.addView(tvWatched);
@@ -153,6 +158,13 @@ public class CalendarFragment extends Fragment {
                         .setPositiveButton("Close", null)
                         .show();
             });
+        });
+    }
+
+    private void onDragDrop(DragData data, DayCell targetCell) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            db.calendarEventDao().updateEventDate(data.event.id, targetCell.date);
+            requireActivity().runOnUiThread(this::loadMonth);
         });
     }
 }

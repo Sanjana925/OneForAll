@@ -1,5 +1,6 @@
 package com.sanjana.oneforall.adapters;
 
+import android.content.ClipData;
 import android.content.Context;
 import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
@@ -7,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,11 +24,15 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
     private final Context context;
     private final List<DayCell> dayCells;
     private final Consumer<DayCell> clickCallback;
+    private final BiConsumer<DragData, DayCell> dragDropCallback;
 
-    public CalendarAdapter(Context context, List<DayCell> dayCells, Consumer<DayCell> clickCallback) {
+    public CalendarAdapter(Context context, List<DayCell> dayCells,
+                           Consumer<DayCell> clickCallback,
+                           BiConsumer<DragData, DayCell> dragDropCallback) {
         this.context = context;
         this.dayCells = dayCells;
         this.clickCallback = clickCallback;
+        this.dragDropCallback = dragDropCallback;
     }
 
     @NonNull
@@ -42,20 +48,13 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
         DayCell cell = dayCells.get(position);
         holder.llEventContainer.removeAllViews();
 
-        if (cell.day == 0) {
-            holder.tvDay.setText("");
-            return;
-        }
-
+        if (cell.day == 0) { holder.tvDay.setText(""); return; }
         holder.tvDay.setText(String.valueOf(cell.day));
 
-        int maxItems = Math.min(3, cell.events.size());
-        for (int i = 0; i < maxItems; i++) {
-            CalendarEvent e = cell.events.get(i);
-
+        for (CalendarEvent e : cell.events) {
             LinearLayout card = new LinearLayout(context);
             card.setOrientation(LinearLayout.VERTICAL);
-            card.setPadding(12, 12, 12, 12);
+            card.setPadding(12,12,12,12);
 
             GradientDrawable bg = new GradientDrawable();
             bg.setCornerRadius(8f);
@@ -72,25 +71,40 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
 
             TextView tvTitle = new TextView(context);
             tvTitle.setText(e.title);
-            tvTitle.setTextColor(e.categoryColor); // ✅ category color applied
+            tvTitle.setTextColor(e.categoryColor);
             tvTitle.setTextSize(13f);
             tvTitle.setSingleLine(true);
-            tvTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
-
+            tvTitle.setEllipsize(TextUtils.TruncateAt.END);
             card.addView(tvTitle);
-            holder.llEventContainer.addView(card);
 
-            // click card -> show popup
-            card.setOnClickListener(v -> clickCallback.accept(cell));
+            card.setOnLongClickListener(v -> {
+                DragData data = new DragData(e);
+                ClipData clip = ClipData.newPlainText("", "");
+                View.DragShadowBuilder shadow = new View.DragShadowBuilder(card);
+                v.startDragAndDrop(clip, shadow, data, 0);
+                return true;
+            });
+
+            holder.llEventContainer.addView(card);
         }
+
+        holder.itemView.setOnDragListener((v, event) -> {
+            switch (event.getAction()) {
+                case android.view.DragEvent.ACTION_DROP:
+                    if (event.getLocalState() instanceof DragData) {
+                        DragData data = (DragData) event.getLocalState();
+                        dragDropCallback.accept(data, cell);
+                    }
+                    return true;
+            }
+            return true;
+        });
 
         holder.itemView.setOnClickListener(v -> clickCallback.accept(cell));
     }
 
     @Override
-    public int getItemCount() {
-        return dayCells.size();
-    }
+    public int getItemCount() { return dayCells.size(); }
 
     static class DayViewHolder extends RecyclerView.ViewHolder {
         TextView tvDay;
@@ -102,4 +116,11 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
             llEventContainer = itemView.findViewById(R.id.llEventContainer);
         }
     }
+
+    public static class DragData {
+        public CalendarEvent event;
+        public DragData(CalendarEvent e) { this.event = e; }
+    }
+
+    public interface BiConsumer<T,U> { void accept(T t, U u); }
 }

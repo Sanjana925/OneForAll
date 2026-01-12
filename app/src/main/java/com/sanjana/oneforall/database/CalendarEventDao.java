@@ -19,6 +19,7 @@ public interface CalendarEventDao {
 
     @Delete
     void delete(CalendarEvent event);
+
     @Query("DELETE FROM CalendarEvent WHERE id = :itemId")
     void deleteByItemId(int itemId);
 
@@ -33,4 +34,8 @@ public interface CalendarEventDao {
 
     @Query("SELECT * FROM CalendarEvent WHERE title = :title")
     List<CalendarEvent> getEventsByTitle(String title);
+
+    // ✅ New method for drag & drop
+    @Query("UPDATE CalendarEvent SET date = :newDate WHERE id = :eventId")
+    void updateEventDate(int eventId, String newDate);
 }

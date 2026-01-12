@@ -14,13 +14,14 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.sanjana.oneforall.ui.category.CategoryFragment;
+import com.sanjana.oneforall.ui.category.AddEditCategoryActivity;
 import com.sanjana.oneforall.ui.home.AddEditItemActivity;
 import com.sanjana.oneforall.ui.home.HomeFragment;
+import com.sanjana.oneforall.ui.list.AddEditListActivity;
+import com.sanjana.oneforall.ui.list.ListFragment;
 import com.sanjana.oneforall.ui.search.SearchFragment;
 import com.sanjana.oneforall.ui.calendar.CalendarFragment;
-import com.sanjana.oneforall.ui.list.ListFragment;
-import com.sanjana.oneforall.ui.list.AddEditListActivity;
-import com.sanjana.oneforall.ui.category.AddEditCategoryActivity;
+import com.sanjana.oneforall.ui.calendar.AddCalendarEventActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,16 +42,13 @@ public class MainActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.topAppBar);
         fab = findViewById(R.id.fabAdd);
 
-        // Top app bar menu click opens drawer
-        toolbar.setNavigationOnClickListener(v ->
-                drawerLayout.openDrawer(GravityCompat.START)
-        );
+        toolbar.setNavigationOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
         // Load default fragment
         if (savedInstanceState == null) {
             loadFragment(new HomeFragment());
             bottomNavigationView.setSelectedItemId(R.id.nav_home);
-            fab.show(); // FAB visible on Home by default
+            fab.show();
         }
 
         // Bottom navigation selection
@@ -69,10 +67,10 @@ public class MainActivity extends AppCompatActivity {
                 fab.hide();
             } else if (id == R.id.nav_calendar) {
                 fragment = new CalendarFragment();
-                fab.hide();
+                fab.show(); // show FAB for Calendar
             } else if (id == R.id.nav_list) {
                 fragment = new ListFragment();
-                fab.show(); // show FAB for list
+                fab.show();
             }
 
             if (fragment != null) {
@@ -82,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
-
         // Drawer menu click
         navigationView.setNavigationItemSelectedListener(item -> {
             drawerLayout.closeDrawer(GravityCompat.START);
@@ -91,22 +88,20 @@ public class MainActivity extends AppCompatActivity {
 
         // FAB click listener
         fab.setOnClickListener(v -> {
-            Fragment current =
-                    getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
+            Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
 
             if (current instanceof HomeFragment) {
                 startActivity(new Intent(this, AddEditItemActivity.class));
-
             } else if (current instanceof CategoryFragment) {
                 startActivity(new Intent(this, AddEditCategoryActivity.class));
-
             } else if (current instanceof ListFragment) {
-                startActivity(new Intent(this, AddEditListActivity.class)); // ✅ Launch Add/Edit List
+                startActivity(new Intent(this, AddEditListActivity.class));
+            } else if (current instanceof CalendarFragment) {
+                startActivity(new Intent(this, AddCalendarEventActivity.class));
             }
         });
     }
 
-    // Helper method to replace fragment
     private void loadFragment(@NonNull Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragmentContainer, fragment)

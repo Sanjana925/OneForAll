@@ -160,10 +160,8 @@ public class AddEditItemActivity extends AppCompatActivity {
                     db.dailyProgressDao().update(dp);
                 }
 
-                // Watching event
-                if (dp.firstEp > 0) {
-                    addOrUpdateWatchingEvent(today, title, dp.firstEp, dp.lastEp, selectedCategoryColor);
-                }
+                // Add/update calendar event for today (draggable)
+                addOrUpdateWatchingEvent(today, title, dp.firstEp, dp.lastEp, selectedCategoryColor);
             });
             selectedStatus = "Watching";
         }
@@ -234,11 +232,9 @@ public class AddEditItemActivity extends AppCompatActivity {
                     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                         selectedCategoryId = categories.get(position).id;
                         selectedCategoryColor = categories.get(position).color;
-                        // Update start/end color
                         editStart.setTextColor(selectedCategoryColor);
                         editEnd.setTextColor(selectedCategoryColor);
                     }
-
                     @Override public void onNothingSelected(AdapterView<?> parent) { }
                 });
             });
@@ -268,7 +264,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         selectedStatus = i.status;
         updateStatusButtons(i.status);
 
-        // Select spinner
         for (int j = 0; j < categories.size(); j++) {
             if (categories.get(j).id == i.categoryId) {
                 spinnerCategory.setSelection(j);
@@ -299,7 +294,7 @@ public class AddEditItemActivity extends AppCompatActivity {
                 item.id = (int) id;
             }
 
-            // Calendar events with selected category color
+            // Add start/end calendar events
             if (current > 0) addCalendarEvent(item.startDate, title + " (Started)", 1, 1, 1, selectedCategoryColor);
             if (current >= total && total > 0) addCalendarEvent(item.endDate, title + " (Ended)", 0, 0, 0, selectedCategoryColor);
 
@@ -313,9 +308,16 @@ public class AddEditItemActivity extends AppCompatActivity {
 
         executor.execute(() -> {
             db.itemDao().delete(existingItem);
+
+            // Remove start/end events
             removeCalendarEvent(existingItem.startDate, existingItem.title + " (Started)");
             removeCalendarEvent(existingItem.endDate, existingItem.title + " (Ended)");
-            removeWatchingEventByPrefix(LocalDate.now().toString(), existingItem.title);
+
+            // Remove all daily watching events for this item
+            db.dailyProgressDao().getAllByItem(existingItem.id).forEach(dp ->
+                    removeWatchingEventByPrefix(dp.date, existingItem.title)
+            );
+
             runOnUiThread(this::finish);
         });
     }
@@ -327,8 +329,8 @@ public class AddEditItemActivity extends AppCompatActivity {
         String prefix = title + " (Watching)";
         CalendarEvent existing = db.calendarEventDao().getEventByTitleAndDatePrefix(prefix, date);
 
-        String newTitle = prefix + " " + (lastEp - firstEp + 1) + " eps (" + firstEp + "-" + lastEp + ")";
         int episodeCount = lastEp - firstEp + 1;
+        String newTitle = prefix + " " + episodeCount + " eps";
 
         if (existing == null) {
             db.calendarEventDao().insert(new CalendarEvent(newTitle, date, episodeCount, firstEp, lastEp, color));
