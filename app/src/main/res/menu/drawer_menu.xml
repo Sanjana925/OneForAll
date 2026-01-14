@@ -10,4 +10,9 @@
         android:title="Settings"
         android:icon="@drawable/ic_settings"/>
 
+    <!-- New Backup Option -->
+    <item
+        android:id="@+id/drawer_backup"
+        android:title="Backup"
+        android:icon="@drawable/ic_backup"/>
 </menu>

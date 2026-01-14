@@ -27,4 +27,7 @@ public interface DailyProgressDao {
     // Optional: get all daily progress for an item (useful if you want history)
     @Query("SELECT * FROM DailyProgress WHERE itemId = :itemId ORDER BY date ASC")
     java.util.List<DailyProgress> getAllByItem(int itemId);
+    @Query("DELETE FROM DailyProgress WHERE itemId = :itemId")
+    void deleteByItem(int itemId);
+
 }

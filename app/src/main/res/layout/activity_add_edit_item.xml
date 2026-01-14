@@ -171,7 +171,7 @@
                 android:contentDescription="Increase Progress"/>
         </LinearLayout>
 
-        <!-- Date with clickable calendar icon -->
+        <!-- Date with clickable calendar icon and clear button -->
         <TextView
             android:id="@+id/tvDate"
             android:layout_width="match_parent"
@@ -181,22 +181,25 @@
             android:textStyle="bold"
             android:layout_marginTop="16dp"/>
 
+        <!-- Start Date Row -->
+        <!-- Start Date Row -->
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:weightSum="2">
+            android:weightSum="2"
+            android:gravity="center_vertical">
 
-            <!-- Start Date -->
             <EditText
                 android:id="@+id/editStartDate"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:hint="Start"
-                android:focusable="false"
-                android:inputType="none"/>
+                android:hint="Start (yyyy-MM-dd)"
+                android:inputType="date"
+                android:focusable="true"
+                android:clickable="true"/>
 
             <ImageButton
                 android:id="@+id/btnStartDate"
@@ -205,16 +208,26 @@
                 android:src="@drawable/ic_calendar"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Select Start Date"/>
+        </LinearLayout>
 
-            <!-- End Date -->
+        <!-- End Date Row -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:weightSum="2"
+            android:gravity="center_vertical">
+
             <EditText
                 android:id="@+id/editEndDate"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:hint="End"
-                android:focusable="false"
-                android:inputType="none"/>
+                android:hint="End (yyyy-MM-dd)"
+                android:inputType="date"
+                android:focusable="true"
+                android:clickable="true"/>
 
             <ImageButton
                 android:id="@+id/btnEndDate"
@@ -224,6 +237,8 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Select End Date"/>
         </LinearLayout>
+
+
 
         <!-- Score -->
         <TextView
@@ -261,18 +276,19 @@
 
         <!-- Delete & Save -->
         <Button
+            android:id="@+id/btnSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save"
+            android:layout_marginTop="8dp"/>
+        <Button
             android:id="@+id/btnDelete"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Delete"
             android:layout_marginTop="16dp"
             android:visibility="gone"/>
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Save"
-            android:layout_marginTop="8dp"/>
+
 
     </LinearLayout>
 </ScrollView>

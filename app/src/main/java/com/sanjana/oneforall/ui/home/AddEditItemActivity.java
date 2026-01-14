@@ -30,7 +30,7 @@ public class AddEditItemActivity extends AppCompatActivity {
     private List<Category> categories = new ArrayList<>();
     private int selectedCategoryId;
     private int selectedCategoryColor = 0xFF2196F3; // default if no category
-    private String selectedStatus = "Plan to Watch";
+    private String selectedStatus = "Watching";
 
     private boolean isEditMode = false;
     private Item existingItem;
@@ -43,6 +43,7 @@ public class AddEditItemActivity extends AppCompatActivity {
         db = AppDatabase.getInstance(this);
 
         bindViews();
+        updateStatusButtons(selectedStatus);
         setupStatusButtons();
         setupProgressButtons();
         setupDatePickers();
@@ -307,20 +308,38 @@ public class AddEditItemActivity extends AppCompatActivity {
         if (existingItem == null) return;
 
         executor.execute(() -> {
+            // 1. Delete the item from DB
             db.itemDao().delete(existingItem);
 
-            // Remove start/end events
+            // 2. Delete calendar events
             removeCalendarEvent(existingItem.startDate, existingItem.title + " (Started)");
             removeCalendarEvent(existingItem.endDate, existingItem.title + " (Ended)");
 
-            // Remove all daily watching events for this item
+            // 3. Delete daily watching events
             db.dailyProgressDao().getAllByItem(existingItem.id).forEach(dp ->
                     removeWatchingEventByPrefix(dp.date, existingItem.title)
             );
 
-            runOnUiThread(this::finish);
+            // 4. Delete daily progress entries
+            db.dailyProgressDao().deleteByItem(existingItem.id);
+
+            // 5. Clear UI fields on main thread
+            runOnUiThread(() -> {
+                editTitle.setText("");
+                editCurrent.setText("");
+                editTotal.setText("");
+                editStart.setText("");
+                editEnd.setText("");
+                editScore.setText("");
+                editNotes.setText("");
+                progressBar.setProgress(0);
+                clearStatusSelection();
+                spinnerCategory.setSelection(0);
+                btnDelete.setVisibility(View.GONE);
+            });
         });
     }
+
 
     // ---------------------- CALENDAR ----------------------
     private void addOrUpdateWatchingEvent(String date, String title, int firstEp, int lastEp, int color) {

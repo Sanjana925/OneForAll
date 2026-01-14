@@ -1,14 +1,14 @@
 package com.sanjana.oneforall.ui.calendar;
 
+import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.sanjana.oneforall.R;
-import com.sanjana.oneforall.database.AppDatabase;
-import com.sanjana.oneforall.database.CalendarEvent;
-import com.sanjana.oneforall.database.Category;
+import com.sanjana.oneforall.database.*;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -19,13 +19,15 @@ public class AddCalendarEventActivity extends AppCompatActivity {
 
     private EditText editTitle, editEpisodes, editStartEp, editEndEp, editDate;
     private Spinner spinnerCategory;
-    private Button btnSave, btnCancel;
+    private Button btnSave, btnDelete, btnCancel;
 
     private AppDatabase db;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private List<Category> categories = new ArrayList<>();
     private int selectedCategoryColor = 0xFF2196F3;
+
+    private CalendarEvent existingEvent; // null if adding new
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -42,16 +44,27 @@ public class AddCalendarEventActivity extends AppCompatActivity {
         spinnerCategory = findViewById(R.id.spinnerCategory);
         btnSave = findViewById(R.id.btnSave);
         btnCancel = findViewById(R.id.btnCancel);
+        btnDelete = findViewById(R.id.btnDelete);
 
         editDate.setText(LocalDate.now().toString());
         editDate.setOnClickListener(v -> showDatePicker());
 
         loadCategories();
 
+        // Check if editing existing event
+        int eventId = getIntent().getIntExtra("calendarEventId", -1);
+        if (eventId != -1) {
+            loadExistingEvent(eventId);
+        } else {
+            btnDelete.setVisibility(View.GONE); // hide delete if adding new
+        }
+
         btnSave.setOnClickListener(v -> saveEvent());
         btnCancel.setOnClickListener(v -> finish());
+        btnDelete.setOnClickListener(v -> deleteEvent());
     }
 
+    // -------------------- LOAD CATEGORIES --------------------
     private void loadCategories() {
         executor.execute(() -> {
             categories = db.categoryDao().getAllCategories();
@@ -62,9 +75,10 @@ public class AddCalendarEventActivity extends AppCompatActivity {
                         android.R.layout.simple_spinner_item, names);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerCategory.setAdapter(adapter);
+
                 spinnerCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                     @Override
-                    public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
+                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                         selectedCategoryColor = categories.get(position).color;
                     }
                     @Override public void onNothingSelected(AdapterView<?> parent) { }
@@ -73,14 +87,44 @@ public class AddCalendarEventActivity extends AppCompatActivity {
         });
     }
 
+    // -------------------- DATE PICKER --------------------
     private void showDatePicker() {
         Calendar c = Calendar.getInstance();
-        new android.app.DatePickerDialog(this,
-                (v, y, m, d) -> editDate.setText(String.format("%04d-%02d-%02d", y, m+1, d)),
+        new DatePickerDialog(this,
+                (v, y, m, d) -> editDate.setText(String.format("%04d-%02d-%02d", y, m + 1, d)),
                 c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH))
                 .show();
     }
 
+    // -------------------- LOAD EXISTING EVENT --------------------
+    private void loadExistingEvent(int id) {
+        executor.execute(() -> {
+            CalendarEvent e = db.calendarEventDao().getEventById(id);
+            if (e != null) {
+                existingEvent = e;
+                runOnUiThread(() -> {
+                    editTitle.setText(e.title);
+                    editDate.setText(e.date);
+                    editEpisodes.setText(String.valueOf(e.episodeCount));
+                    editStartEp.setText(String.valueOf(e.startEp));
+                    editEndEp.setText(String.valueOf(e.endEp));
+
+                    // set spinner selection based on color
+                    for (int i = 0; i < categories.size(); i++) {
+                        if (categories.get(i).color == e.categoryColor) {
+                            spinnerCategory.setSelection(i);
+                            break;
+                        }
+                    }
+
+                    btnDelete.setVisibility(View.VISIBLE);
+                    btnSave.setText("Update");
+                });
+            }
+        });
+    }
+
+    // -------------------- SAVE / UPDATE EVENT --------------------
     private void saveEvent() {
         String title = editTitle.getText().toString().trim();
         String date = editDate.getText().toString().trim();
@@ -93,13 +137,39 @@ public class AddCalendarEventActivity extends AppCompatActivity {
             return;
         }
 
-        CalendarEvent event = new CalendarEvent(title, date, episodes, startEp, endEp, selectedCategoryColor);
+        if (existingEvent != null) {
+            // Update existing
+            existingEvent.title = title;
+            existingEvent.date = date;
+            existingEvent.episodeCount = episodes;
+            existingEvent.startEp = startEp;
+            existingEvent.endEp = endEp;
+            existingEvent.categoryColor = selectedCategoryColor;
 
+            executor.execute(() -> {
+                db.calendarEventDao().update(existingEvent);
+                runOnUiThread(() -> finish());
+            });
+        } else {
+            // Add new
+            CalendarEvent event = new CalendarEvent(title, date, episodes, startEp, endEp, selectedCategoryColor);
+            executor.execute(() -> {
+                db.calendarEventDao().insert(event);
+                runOnUiThread(() -> finish());
+            });
+        }
+    }
+
+    // -------------------- DELETE EVENT --------------------
+    private void deleteEvent() {
+        if (existingEvent == null) return;
         executor.execute(() -> {
-            db.calendarEventDao().insert(event);
+            db.calendarEventDao().delete(existingEvent);
             runOnUiThread(this::finish);
         });
     }
 
-    private int parseInt(String s) { try { return Integer.parseInt(s); } catch (Exception e) { return 0; } }
+    private int parseInt(String s) {
+        try { return Integer.parseInt(s); } catch (Exception e) { return 0; }
+    }
 }

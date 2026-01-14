@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
+import com.sanjana.oneforall.ui.backup.BackupFragment;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -83,6 +84,19 @@ public class MainActivity extends AppCompatActivity {
         // Drawer menu click
         navigationView.setNavigationItemSelectedListener(item -> {
             drawerLayout.closeDrawer(GravityCompat.START);
+            int id = item.getItemId();
+
+            if (id == R.id.drawer_profile) {
+                // Open Profile
+            } else if (id == R.id.drawer_settings) {
+                // Open Settings
+            } else if (id == R.id.drawer_backup) {
+                // Open a new BackupFragment
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragmentContainer, new BackupFragment())
+                        .addToBackStack(null)
+                        .commit();
+            }
             return true;
         });
 
