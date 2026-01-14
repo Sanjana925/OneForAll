@@ -80,8 +80,10 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="12dp"
+        android:paddingBottom="80dp"
         android:clipToPadding="false"
-        android:paddingBottom="80dp"/> <!-- Add this line for bottom space -->
+        android:scrollbars="vertical"
+        android:fastScrollEnabled="true"/>
+<!-- Add this line for bottom space -->
 
 </LinearLayout>
