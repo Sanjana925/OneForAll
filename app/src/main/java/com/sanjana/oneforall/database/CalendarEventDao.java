@@ -7,6 +7,7 @@ import androidx.room.Delete;
 import androidx.room.Query;
 
 import java.util.List;
+
 @Dao
 public interface CalendarEventDao {
 
@@ -34,11 +35,9 @@ public interface CalendarEventDao {
     @Query("SELECT * FROM CalendarEvent WHERE title = :title")
     List<CalendarEvent> getEventsByTitle(String title);
 
-    // ✅ New method for drag & drop
     @Query("UPDATE CalendarEvent SET date = :newDate WHERE id = :eventId")
     void updateEventDate(int eventId, String newDate);
 
-    // ✅ Add this method
     @Query("SELECT * FROM CalendarEvent WHERE id = :eventId LIMIT 1")
     CalendarEvent getEventById(int eventId);
 }

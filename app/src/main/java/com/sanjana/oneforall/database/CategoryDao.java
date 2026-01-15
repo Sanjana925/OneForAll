@@ -20,11 +20,9 @@ public interface CategoryDao {
     @Delete
     void delete(Category category);
 
-    // ✅ REQUIRED for CategoryFragment
     @Query("SELECT * FROM Category ORDER BY name ASC")
     List<Category> getAllCategories();
 
-    // ✅ REQUIRED for Edit Category
     @Query("SELECT * FROM Category WHERE id = :id LIMIT 1")
     Category getCategoryById(int id);
 }

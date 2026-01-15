@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="12dp"
     android:fitsSystemWindows="true">
 
-    <!-- ================= TOP BAR ================= -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -18,16 +18,15 @@
             android:id="@+id/spinnerFolder"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1" />
+            android:layout_weight="1"/>
 
         <Button
             android:id="@+id/btnSave"
             android:layout_width="80dp"
             android:layout_height="40dp"
-            android:text="Save" />
+            android:text="Save"/>
     </LinearLayout>
 
-    <!-- ================= TITLE ================= -->
     <EditText
         android:id="@+id/editListTitle"
         android:layout_width="match_parent"
@@ -36,9 +35,8 @@
         android:textSize="18sp"
         android:textStyle="bold"
         android:layout_marginBottom="8dp"
-        android:singleLine="true" />
+        android:singleLine="true"/>
 
-    <!-- ================= CONTENT (SCROLLABLE) ================= -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -53,10 +51,9 @@
             android:hint="Start writing..."
             android:inputType="textMultiLine"
             android:minLines="8"
-            android:textSize="16sp" />
+            android:textSize="16sp"/>
     </ScrollView>
 
-    <!-- ================= BOTTOM TOOLBAR ================= -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="48dp"
@@ -68,42 +65,41 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_bold"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"/>
 
         <ImageButton
             android:id="@+id/btnItalic"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_italic"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"/>
 
         <ImageButton
             android:id="@+id/btnUnderline"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_underline"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"/>
 
         <ImageButton
             android:id="@+id/btnNumbered"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_number"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"/>
 
         <ImageButton
             android:id="@+id/btnBullet"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_bullet"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"/>
 
         <ImageButton
             android:id="@+id/btnTask"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_checkbox"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"/>
     </LinearLayout>
-
 </LinearLayout>

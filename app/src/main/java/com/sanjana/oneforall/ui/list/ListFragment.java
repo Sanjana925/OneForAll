@@ -34,7 +34,7 @@ public class ListFragment extends Fragment {
     private List<ListFolder> folders = new ArrayList<>();
     private List<ListItem> items = new ArrayList<>();
     private AppDatabase db;
-    private ListFolder selectedFolder; // -1 = All
+    private ListFolder selectedFolder;
 
     @Nullable
     @Override
@@ -60,7 +60,6 @@ public class ListFragment extends Fragment {
         rvFolders.setAdapter(folderAdapter);
 
         itemAdapter = new ListItemAdapter(getContext(), items, item -> {
-            // Delete confirmation
             new androidx.appcompat.app.AlertDialog.Builder(requireContext())
                     .setTitle("Delete Note")
                     .setMessage("Are you sure you want to delete this note?")
@@ -75,7 +74,6 @@ public class ListFragment extends Fragment {
         });
         rvItems.setAdapter(itemAdapter);
 
-        // Folder menu icon
         ImageButton btnMenu = view.findViewById(R.id.btnFolderMenu);
         btnMenu.setOnClickListener(v -> showFolderMenu());
 
@@ -88,7 +86,6 @@ public class ListFragment extends Fragment {
         new Thread(() -> {
             List<ListFolder> dbFolders = db.listFolderDao().getAll();
 
-            // Add "All" at position 0
             ListFolder allFolder = new ListFolder("All");
             allFolder.id = -1;
 
@@ -101,7 +98,6 @@ public class ListFragment extends Fragment {
                 folders.addAll(allFolders);
                 folderAdapter.notifyDataSetChanged();
 
-                // Select "All" by default
                 if (selectedFolder == null) {
                     selectedFolder = allFolder;
                     folderAdapter.notifyItemChanged(0);
@@ -136,12 +132,10 @@ public class ListFragment extends Fragment {
                 .setTitle("Folders")
                 .setItems(new String[]{"All", "Add New Folder"}, (dialog, which) -> {
                     if (which == 0) {
-                        // Select All
                         selectedFolder = folders.get(0);
                         folderAdapter.notifyDataSetChanged();
                         loadItems();
                     } else {
-                        // Add Folder
                         showAddFolderDialog();
                     }
                 }).show();

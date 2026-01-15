@@ -49,7 +49,6 @@ public class ListFolderAdapter extends RecyclerView.Adapter<ListFolderAdapter.Fo
             selectedPosition = holder.getAdapterPosition();
             notifyItemChanged(oldPosition);
             notifyItemChanged(selectedPosition);
-
             if (listener != null) listener.onFolderClick(folder);
         });
     }

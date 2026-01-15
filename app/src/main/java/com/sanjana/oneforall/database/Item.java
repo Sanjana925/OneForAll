@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey;
 
 @Entity
 public class Item {
+
     @PrimaryKey(autoGenerate = true)
     public int id;
 
@@ -20,15 +21,13 @@ public class Item {
     public String notes;
 
     @ColumnInfo(name = "lastUpdated")
-    public long lastUpdated = System.currentTimeMillis(); // auto-init current time
+    public long lastUpdated = System.currentTimeMillis();
 
     @ColumnInfo(name = "orderIndex")
-    public int orderIndex = 0; // default 0
+    public int orderIndex = 0;
 
-    // No-arg constructor required by Room
     public Item() {}
 
-    // Optional: full constructor including new fields
     public Item(String title, int categoryId, String status,
                 int currentProgress, int totalProgress,
                 String startDate, String endDate, int score, String notes,

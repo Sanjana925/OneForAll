@@ -9,11 +9,11 @@ public class ListItem {
     @PrimaryKey(autoGenerate = true)
     public int id;
 
-    public int folderId;      // belongs to folder
+    public int folderId;
     public String title;
-    public String content;    // free text / bullets
-    public long updatedAt;    // last edited
-    public long timestamp;    // creation time
+    public String content;
+    public long updatedAt;
+    public long timestamp;
 
     public ListItem(int folderId, String title, String content, long timestamp) {
         this.folderId = folderId;

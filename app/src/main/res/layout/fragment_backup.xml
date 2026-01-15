@@ -28,11 +28,11 @@
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:text="Restore Database"/>
+
     <Button
         android:id="@+id/btnShare"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:text="Share Backup"
         android:layout_marginTop="16dp"/>
-
 </LinearLayout>

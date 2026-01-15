@@ -8,6 +8,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
+
 @Database(
         entities = {
                 Category.class,
@@ -17,7 +18,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
                 CalendarEvent.class,
                 DailyProgress.class
         },
-        version = 3 // incremented version
+        version = 3
 )
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -30,20 +31,14 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract CalendarEventDao calendarEventDao();
     public abstract DailyProgressDao dailyProgressDao();
 
-    // Migration from version 2 → 3
     public static final Migration MIGRATION_2_3 = new Migration(2, 3) {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase database) {
             try {
-                // Add new columns to Item table without deleting existing data
-
                 database.execSQL("ALTER TABLE Item ADD COLUMN orderIndex INTEGER NOT NULL DEFAULT 0");
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-            // If new tables were added, create them safely here
-            // e.g., database.execSQL("CREATE TABLE IF NOT EXISTS NewTable (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL)");
         }
     };
 
@@ -56,7 +51,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class,
                                     "oneforall_db"
                             )
-                            .addMigrations(MIGRATION_2_3) // <-- safe migration
+                            .addMigrations(MIGRATION_2_3)
                             .build();
                 }
             }

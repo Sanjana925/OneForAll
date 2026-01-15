@@ -16,7 +16,6 @@
         <activity
             android:name=".ui.calendar.AddCalendarEventActivity"
             android:exported="false" />
-        <!-- ✅ FIXED: Keyboard resize for List Add/Edit -->
         <activity
             android:name=".ui.list.AddEditListActivity"
             android:exported="true"

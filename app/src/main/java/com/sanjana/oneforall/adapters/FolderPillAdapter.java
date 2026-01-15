@@ -15,7 +15,7 @@ import java.util.List;
 public class FolderPillAdapter extends RecyclerView.Adapter<FolderPillAdapter.PillViewHolder> {
 
     public interface OnFolderSelectListener {
-        void onFolderSelected(ListFolder folder); // folder.id=-1 for "All"
+        void onFolderSelected(ListFolder folder);
     }
 
     private Context context;
@@ -47,14 +47,10 @@ public class FolderPillAdapter extends RecyclerView.Adapter<FolderPillAdapter.Pi
             selectedPosition = holder.getAdapterPosition();
             notifyItemChanged(oldPos);
             notifyItemChanged(selectedPosition);
-
             if (listener != null) listener.onFolderSelected(folder);
         });
 
-        holder.itemView.setOnLongClickListener(v -> {
-            // Optional: implement Edit/Delete dialog for folder here
-            return true;
-        });
+        holder.itemView.setOnLongClickListener(v -> true);
     }
 
     @Override
@@ -64,6 +60,7 @@ public class FolderPillAdapter extends RecyclerView.Adapter<FolderPillAdapter.Pi
 
     static class PillViewHolder extends RecyclerView.ViewHolder {
         TextView tvFolderName;
+
         public PillViewHolder(@NonNull View itemView) {
             super(itemView);
             tvFolderName = itemView.findViewById(R.id.tvFolderName);

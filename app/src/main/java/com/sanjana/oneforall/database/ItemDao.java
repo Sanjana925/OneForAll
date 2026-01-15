@@ -18,7 +18,8 @@ public interface ItemDao {
 
     @Delete
     void delete(Item item);
-
+    @Query("SELECT * FROM Item ORDER BY orderIndex ASC")
+    List<Item> getAllItemsOrdered();
     @Query("SELECT * FROM Item")
     List<Item> getAllItems();
 
@@ -34,7 +35,6 @@ public interface ItemDao {
     @Query("SELECT * FROM Item WHERE categoryId = :catId AND status = :status")
     List<Item> getItemsByCategoryAndStatus(int catId, String status);
 
-    // ----------------- NEW -----------------
     @Query("SELECT * FROM Item WHERE title = :title LIMIT 1")
     Item getItemByTitle(String title);
 }

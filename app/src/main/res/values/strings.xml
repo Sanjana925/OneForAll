@@ -12,5 +12,6 @@
     <string name="category_name">Category Name</string>
     <string name="add_category">Add Category</string>
     <string name="_1">1</string>
+    <string name="fab">Fab</string>
 
 </resources>

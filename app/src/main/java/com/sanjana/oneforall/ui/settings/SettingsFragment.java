@@ -29,11 +29,9 @@ public class SettingsFragment extends Fragment {
 
         prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
 
-        // Load saved preferences
         switchNotifications.setChecked(prefs.getBoolean("notifications_enabled", true));
         switchTheme.setChecked(prefs.getBoolean("dark_theme_enabled", false));
 
-        // ------------------- Notifications -------------------
         switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("notifications_enabled", isChecked).apply();
             Toast.makeText(requireContext(),
@@ -41,14 +39,12 @@ public class SettingsFragment extends Fragment {
                     Toast.LENGTH_SHORT).show();
         });
 
-        // ------------------- Dark / Light Theme -------------------
         switchTheme.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("dark_theme_enabled", isChecked).apply();
             Toast.makeText(requireContext(),
                     "Theme changed to " + (isChecked ? "Dark" : "Light"),
                     Toast.LENGTH_SHORT).show();
 
-            // Apply theme
             if (getActivity() instanceof MainActivity) {
                 ((MainActivity) getActivity()).applyTheme(isChecked);
             }

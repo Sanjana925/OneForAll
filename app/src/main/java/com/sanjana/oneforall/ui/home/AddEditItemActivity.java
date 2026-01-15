@@ -29,7 +29,7 @@ public class AddEditItemActivity extends AppCompatActivity {
 
     private List<Category> categories = new ArrayList<>();
     private int selectedCategoryId;
-    private int selectedCategoryColor = 0xFF2196F3; // default if no category
+    private int selectedCategoryColor = 0xFF2196F3;
     private String selectedStatus = "Watching";
 
     private boolean isEditMode = false;
@@ -59,7 +59,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         btnDelete.setOnClickListener(v -> deleteItem());
     }
 
-    // ---------------------- BIND ----------------------
     private void bindViews() {
         editTitle = findViewById(R.id.editItemTitle);
         editCurrent = findViewById(R.id.editCurrentProgress);
@@ -88,7 +87,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.itemProgressBar);
     }
 
-    // ---------------------- STATUS ----------------------
     private void setupStatusButtons() {
         View.OnClickListener l = v -> {
             clearStatusSelection();
@@ -127,7 +125,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         }
     }
 
-    // ---------------------- PROGRESS ----------------------
     private void setupProgressButtons() {
         btnIncreaseProgress.setOnClickListener(v -> changeProgress(true));
         btnDecreaseProgress.setOnClickListener(v -> changeProgress(false));
@@ -148,7 +145,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         String title = editTitle.getText().toString().trim();
         String today = LocalDate.now().toString();
 
-        // ------------------ STARTED ------------------
         if (old == 0 && current == 1) {
             String start = editStart.getText().toString().trim();
             if (start.isEmpty()) start = today;
@@ -157,7 +153,6 @@ public class AddEditItemActivity extends AppCompatActivity {
             selectedStatus = "Watching";
         }
 
-        // ------------------ DAILY PROGRESS ------------------
         if (current > 0 && current < total) {
             final int finalCurrent = current;
             executor.execute(() -> {
@@ -171,20 +166,17 @@ public class AddEditItemActivity extends AppCompatActivity {
                     if (dp.firstEp > finalCurrent) dp.firstEp = finalCurrent;
                     db.dailyProgressDao().update(dp);
                 }
-
                 addOrUpdateWatchingEvent(today, title, dp.firstEp, dp.lastEp, selectedCategoryColor);
             });
             selectedStatus = "Watching";
         }
 
-        // ------------------ ENDED ------------------
         if (current == total && total > 0) {
             removeWatchingEventByPrefix(today, title);
             addCalendarEvent(today, title + " (Ended)", 0, 0, 0, selectedCategoryColor);
             selectedStatus = "Completed";
         }
 
-        // ------------------ DECREASE ------------------
         if (!increase) {
             if (old == total && current < total) removeCalendarEvent(today, title + " (Ended)");
             if (current == 0) {
@@ -198,7 +190,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         updateStatusButtons(selectedStatus);
     }
 
-    // ---------------------- DATES ----------------------
     private void setupDatePickers() {
         btnStartDate.setOnClickListener(v -> showDatePicker(editStart));
         btnEndDate.setOnClickListener(v -> showDatePicker(editEnd));
@@ -214,7 +205,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         ).show();
     }
 
-    // ---------------------- CATEGORIES ----------------------
     private void loadCategories() {
         executor.execute(() -> {
             categories = db.categoryDao().getAllCategories();
@@ -241,7 +231,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         });
     }
 
-    // ---------------------- LOAD ITEM ----------------------
     private void loadItem(int id) {
         executor.execute(() -> {
             existingItem = db.itemDao().getItemById(id);
@@ -273,8 +262,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         }
     }
 
-    // ---------------------- SAVE ----------------------
-
     private void saveItem() {
         String title = editTitle.getText().toString().trim();
         if (title.isEmpty()) {
@@ -289,7 +276,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         String startDate = editStart.getText().toString().trim();
         String endDate = editEnd.getText().toString().trim();
 
-        // -------------------- CREATE OR UPDATE ITEM --------------------
         Item item = new Item(
                 title,
                 selectedCategoryId,
@@ -300,8 +286,8 @@ public class AddEditItemActivity extends AppCompatActivity {
                 endDate,
                 score,
                 notes,
-                System.currentTimeMillis(), // <-- lastUpdated
-                0 // orderIndex default
+                System.currentTimeMillis(),
+                0
         );
 
         executor.execute(() -> {
@@ -313,19 +299,13 @@ public class AddEditItemActivity extends AppCompatActivity {
                 item.id = (int) id;
             }
 
-            // -------------------- CALENDAR EVENTS --------------------
-            if (current > 0) {
-                addCalendarEvent(item.startDate, title + " (Started)", 1, 1, 1, selectedCategoryColor);
-            }
-            if (current >= total && total > 0) {
-                addCalendarEvent(item.endDate, title + " (Ended)", 0, 0, 0, selectedCategoryColor);
-            }
+            if (current > 0) addCalendarEvent(item.startDate, title + " (Started)", 1, 1, 1, selectedCategoryColor);
+            if (current >= total && total > 0) addCalendarEvent(item.endDate, title + " (Ended)", 0, 0, 0, selectedCategoryColor);
 
             runOnUiThread(this::finish);
         });
     }
 
-    // ---------------------- DELETE ----------------------
     private void deleteItem() {
         if (existingItem == null) return;
 
@@ -357,7 +337,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         });
     }
 
-    // ---------------------- CALENDAR ----------------------
     private void addOrUpdateWatchingEvent(String date, String title, int firstEp, int lastEp, int color) {
         if (date == null || date.isEmpty()) return;
 
@@ -400,5 +379,7 @@ public class AddEditItemActivity extends AppCompatActivity {
         if (e != null) db.calendarEventDao().delete(e);
     }
 
-    private int parseInt(String s) { try { return Integer.parseInt(s); } catch (Exception e) { return 0; } }
+    private int parseInt(String s) {
+        try { return Integer.parseInt(s); } catch (Exception e) { return 0; }
+    }
 }

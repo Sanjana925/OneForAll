@@ -45,19 +45,15 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
     @Override
     public void onBindViewHolder(@NonNull CategoryViewHolder holder, int position) {
         Category category = categories.get(position);
-
-        // Display category name in its color
         holder.categoryName.setText(category.name);
         holder.categoryName.setTextColor(category.color != 0 ? category.color : Color.BLACK);
 
-        // Edit button → launch AddEditCategoryActivity with categoryId
         holder.editButton.setOnClickListener(v -> {
             Intent intent = new Intent(context, AddEditCategoryActivity.class);
             intent.putExtra("categoryId", category.id);
             context.startActivity(intent);
         });
 
-        // Delete button
         holder.deleteButton.setOnClickListener(v -> executor.execute(() -> {
             db.categoryDao().delete(category);
             holder.itemView.post(() -> {

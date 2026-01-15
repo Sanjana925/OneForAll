@@ -1,5 +1,6 @@
 package com.sanjana.oneforall.ui.profile;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,13 +19,17 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.imageview.ShapeableImageView;
 import com.sanjana.oneforall.R;
-import com.sanjana.oneforall.MainActivity;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class ProfileFragment extends Fragment {
 
     private EditText etUsername;
     private Button btnSave;
-    private ShapeableImageView btnAvatar;
+    private ShapeableImageView ivAvatar;
 
     private static final String PREFS_NAME = "oneforall_prefs";
     private static final String KEY_USERNAME = "username";
@@ -38,39 +43,35 @@ public class ProfileFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container,
                              Bundle savedInstanceState) {
-
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
 
         etUsername = view.findViewById(R.id.etUsername);
         btnSave = view.findViewById(R.id.btnSaveUsername);
-        btnAvatar = view.findViewById(R.id.btnAvatar);
+        ivAvatar = view.findViewById(R.id.btnAvatar);
 
-        prefs = requireContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+        prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-        // Load username
         etUsername.setText(prefs.getString(KEY_USERNAME, ""));
 
-        // Load avatar
-        String avatarUriStr = prefs.getString(KEY_AVATAR_URI, null);
-        if (avatarUriStr != null) btnAvatar.setImageURI(Uri.parse(avatarUriStr));
-        else btnAvatar.setImageResource(R.drawable.ic_avatar); // placeholder
+        String avatarPath = prefs.getString(KEY_AVATAR_URI, null);
+        if (avatarPath != null) {
+            File avatarFile = new File(avatarPath);
+            if (avatarFile.exists()) {
+                ivAvatar.setImageURI(Uri.fromFile(avatarFile));
+            }
+        }
 
-        // Avatar picker
         pickImageLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        btnAvatar.setImageURI(uri);
-                        prefs.edit().putString(KEY_AVATAR_URI, uri.toString()).apply();
-                        Toast.makeText(getContext(), "Avatar updated", Toast.LENGTH_SHORT).show();
-                        updateDrawerHeader();
+                        saveAvatarToInternal(uri);
                     }
                 }
         );
 
-        btnAvatar.setOnClickListener(v -> pickImageLauncher.launch("image/*"));
+        ivAvatar.setOnClickListener(v -> pickImageLauncher.launch("image/*"));
 
-        // Save username
         btnSave.setOnClickListener(v -> {
             String username = etUsername.getText().toString().trim();
             if (username.isEmpty()) {
@@ -85,10 +86,33 @@ public class ProfileFragment extends Fragment {
         return view;
     }
 
-    // Update drawer header avatar + username
+    private void saveAvatarToInternal(@NonNull Uri uri) {
+        try {
+            File file = new File(requireContext().getFilesDir(), "avatar.png");
+            try (InputStream in = requireContext().getContentResolver().openInputStream(uri);
+                 OutputStream out = new FileOutputStream(file)) {
+
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
+
+            prefs.edit().putString(KEY_AVATAR_URI, file.getAbsolutePath()).apply();
+            ivAvatar.setImageURI(Uri.fromFile(file));
+            Toast.makeText(getContext(), "Avatar updated", Toast.LENGTH_SHORT).show();
+            updateDrawerHeader();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Failed to update avatar", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void updateDrawerHeader() {
-        if (getActivity() instanceof MainActivity) {
-            MainActivity main = (MainActivity) getActivity();
+        if (getActivity() instanceof com.sanjana.oneforall.MainActivity) {
+            com.sanjana.oneforall.MainActivity main = (com.sanjana.oneforall.MainActivity) getActivity();
             main.updateDrawerProfile();
         }
     }

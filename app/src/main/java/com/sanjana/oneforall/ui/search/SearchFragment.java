@@ -49,9 +49,8 @@ public class SearchFragment extends Fragment {
         adapter = new ItemAdapter(getContext(), filteredItems);
         recyclerView.setAdapter(adapter);
 
-        loadItems(); // Load items from DB safely
+        loadItems();
 
-        // Search filter
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -92,6 +91,6 @@ public class SearchFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadItems(); // reload items safely
+        loadItems();
     }
 }

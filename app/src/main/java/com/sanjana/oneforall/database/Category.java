@@ -1,4 +1,3 @@
-// Category.java
 package com.sanjana.oneforall.database;
 
 import androidx.room.Entity;
@@ -17,8 +16,9 @@ public class Category {
         this.name = name;
         this.color = color;
     }
+
     @Override
     public String toString() {
-        return name; // Spinner will display the category name
+        return name;
     }
 }

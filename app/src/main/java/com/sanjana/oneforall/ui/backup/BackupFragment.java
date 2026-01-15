@@ -24,7 +24,6 @@ public class BackupFragment extends Fragment {
 
     private Button btnBackup, btnRestore, btnShare;
 
-    // Folder & file
     private final File backupFolder =
             new File(Environment.getExternalStorageDirectory(), "OneForAllBackup");
     private final File backupFile =
@@ -41,7 +40,6 @@ public class BackupFragment extends Fragment {
         btnRestore = view.findViewById(R.id.btnRestore);
         btnShare = view.findViewById(R.id.btnShare);
 
-        // Create folder if missing
         if (!backupFolder.exists()) backupFolder.mkdirs();
 
         btnBackup.setOnClickListener(v -> backupDatabase());
@@ -51,14 +49,12 @@ public class BackupFragment extends Fragment {
         return view;
     }
 
-    // ---------------------- BACKUP ----------------------
     private void backupDatabase() {
         try {
             File dbFile = requireContext().getDatabasePath("oneforall.db");
 
             try (FileChannel src = new FileInputStream(dbFile).getChannel();
                  FileChannel dst = new FileOutputStream(backupFile).getChannel()) {
-
                 dst.transferFrom(src, 0, src.size());
             }
 
@@ -73,7 +69,6 @@ public class BackupFragment extends Fragment {
         }
     }
 
-    // ---------------------- RESTORE ----------------------
     private void restoreDatabase() {
         try {
             if (!backupFile.exists()) {
@@ -85,7 +80,6 @@ public class BackupFragment extends Fragment {
 
             try (FileChannel src = new FileInputStream(backupFile).getChannel();
                  FileChannel dst = new FileOutputStream(dbFile).getChannel()) {
-
                 dst.transferFrom(src, 0, src.size());
             }
 
@@ -100,7 +94,6 @@ public class BackupFragment extends Fragment {
         }
     }
 
-    // ---------------------- SHARE ----------------------
     private void shareBackup() {
         try {
             if (!backupFile.exists()) {

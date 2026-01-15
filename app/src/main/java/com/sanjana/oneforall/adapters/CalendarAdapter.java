@@ -53,7 +53,6 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
         }
         holder.tvDay.setText(String.valueOf(cell.day));
 
-        // Show small cards inside the grid cell (like preview)
         for (CalendarEvent e : cell.events) {
             LinearLayout card = new LinearLayout(context);
             card.setOrientation(LinearLayout.VERTICAL);
@@ -61,7 +60,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
 
             GradientDrawable bg = new GradientDrawable();
             bg.setCornerRadius(8f);
-            bg.setColor(0xFFE0F7FA); // light color for category
+            bg.setColor(0xFFE0F7FA);
             bg.setStroke(1, 0xFFB0B0B0);
             card.setBackground(bg);
 
@@ -91,7 +90,6 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
             holder.llEventContainer.addView(card);
         }
 
-        // Drag & drop listener for the whole day cell
         holder.itemView.setOnDragListener((v, event) -> {
             switch (event.getAction()) {
                 case android.view.DragEvent.ACTION_DROP:
@@ -104,7 +102,6 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
             return true;
         });
 
-        // Click to open popup with detailed events
         holder.itemView.setOnClickListener(v -> clickCallback.accept(cell));
     }
 
@@ -126,8 +123,13 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
 
     public static class DragData {
         public final CalendarEvent event;
-        public DragData(CalendarEvent e) { this.event = e; }
+
+        public DragData(CalendarEvent e) {
+            this.event = e;
+        }
     }
 
-    public interface BiConsumer<T,U> { void accept(T t, U u); }
+    public interface BiConsumer<T, U> {
+        void accept(T t, U u);
+    }
 }

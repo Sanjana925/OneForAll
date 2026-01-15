@@ -64,7 +64,6 @@ public class AddEditListActivity extends AppCompatActivity {
 
         btnSave.setOnClickListener(v -> saveItem());
 
-        // Formatting buttons
         btnBold.setOnClickListener(v -> applyStyle(Typeface.BOLD));
         btnItalic.setOnClickListener(v -> applyStyle(Typeface.ITALIC));
         btnUnderline.setOnClickListener(v -> applyUnderline());
@@ -72,7 +71,6 @@ public class AddEditListActivity extends AppCompatActivity {
         btnTask.setOnClickListener(v -> insertAtCursor("\n☐ "));
         btnNumbered.setOnClickListener(v -> insertNumberedList());
 
-        // Auto continuation for bullets, numbers, tasks
         editContent.addTextChangedListener(new TextWatcher() {
             private boolean isEditing = false;
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -108,7 +106,6 @@ public class AddEditListActivity extends AppCompatActivity {
         });
     }
 
-    // ---------- Formatting ----------
     private void applyStyle(int style) {
         int start = editContent.getSelectionStart();
         int end = editContent.getSelectionEnd();
@@ -145,7 +142,6 @@ public class AddEditListActivity extends AppCompatActivity {
         editContent.getText().insert(pos, "\n" + lineNumber + ". ");
     }
 
-    // ---------- Database ----------
     private void loadFolders() {
         new Thread(() -> {
             List<ListFolder> data = db.listFolderDao().getAll();

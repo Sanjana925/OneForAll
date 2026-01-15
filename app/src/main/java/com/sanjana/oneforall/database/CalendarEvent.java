@@ -9,14 +9,14 @@ public class CalendarEvent {
     @PrimaryKey(autoGenerate = true)
     public int id;
 
-    public String title;       // Drama title
-    public String date;        // yyyy-MM-dd
+    public String title;
+    public String date;
 
-    public int episodeCount;   // X
-    public int startEp;        // Y
-    public int endEp;          // Z
+    public int episodeCount;
+    public int startEp;
+    public int endEp;
 
-    public int categoryColor;  // same color as category
+    public int categoryColor;
 
     public CalendarEvent(
             String title,

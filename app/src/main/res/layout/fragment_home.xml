@@ -1,10 +1,10 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="12dp">
 
-    <!-- TOP BAR 1: STATUS TABS -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -12,7 +12,7 @@
         android:fillViewport="true"
         android:layout_marginBottom="12dp"
         android:paddingStart="8dp"
-        android:paddingEnd="8dp"> <!-- Added horizontal padding -->
+        android:paddingEnd="8dp">
 
         <LinearLayout
             android:orientation="horizontal"
@@ -25,7 +25,7 @@
                 android:layout_height="wrap_content"
                 android:text="All"
                 android:background="@drawable/bg_filter_spinner"
-                android:layout_marginEnd="12dp"/> <!-- increased margin -->
+                android:layout_marginEnd="12dp"/>
 
             <Button
                 android:id="@+id/btnWatching"
@@ -68,7 +68,6 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <!-- TOP BAR 2: CATEGORY DROPDOWN + TOTAL ENTRIES + SORT ICON -->
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
@@ -76,7 +75,6 @@
         android:gravity="center_vertical"
         android:layout_marginBottom="12dp">
 
-        <!-- CATEGORY DROPDOWN -->
         <Spinner
             android:id="@+id/spinnerCategory"
             android:layout_width="0dp"
@@ -85,7 +83,6 @@
             android:spinnerMode="dropdown"
             android:background="@drawable/bg_filter_spinner"/>
 
-        <!-- TOTAL ENTRIES -->
         <TextView
             android:id="@+id/tvTotalEntries"
             android:layout_width="0dp"
@@ -96,7 +93,6 @@
             android:textSize="14sp"
             android:textColor="@android:color/black"/>
 
-        <!-- SORT ICON -->
         <ImageButton
             android:id="@+id/btnSort"
             android:layout_width="40dp"
@@ -107,13 +103,11 @@
             android:layout_marginStart="8dp"/>
     </LinearLayout>
 
-    <!-- ITEM LIST -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerHome"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingBottom="80dp" />
-
+        android:paddingBottom="80dp"/>
 </LinearLayout>

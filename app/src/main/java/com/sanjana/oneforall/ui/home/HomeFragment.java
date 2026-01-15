@@ -43,12 +43,11 @@ public class HomeFragment extends Fragment {
     private Button btnAll, btnWatching, btnCompleted, btnOnHold, btnDropped, btnPlan;
 
     private String selectedStatus = "All";
-    private int selectedCategoryId = 0; // 0 = All
+    private int selectedCategoryId = 0;
     private List<Category> categories = new ArrayList<>();
 
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    // Enum for sort options
     private enum SortOption {
         STATUS, ALPHABET_ASC, ALPHABET_DESC, LAST_UPDATED_NEW, LAST_UPDATED_OLD
     }
@@ -67,18 +66,15 @@ public class HomeFragment extends Fragment {
 
         db = AppDatabase.getInstance(requireContext());
 
-        // RecyclerView
         recyclerView = view.findViewById(R.id.recyclerHome);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new ItemAdapter(getContext(), filteredItems);
         recyclerView.setAdapter(adapter);
 
-        // Spinner, Sort Button & Total Entries
         categorySpinner = view.findViewById(R.id.spinnerCategory);
         btnSort = view.findViewById(R.id.btnSort);
         tvTotalEntries = view.findViewById(R.id.tvTotalEntries);
 
-        // Status Buttons
         btnAll = view.findViewById(R.id.btnAll);
         btnWatching = view.findViewById(R.id.btnWatching);
         btnCompleted = view.findViewById(R.id.btnCompleted);
@@ -94,13 +90,10 @@ public class HomeFragment extends Fragment {
         return view;
     }
 
-    // ---------------- CATEGORY SPINNER ----------------
     private void setupCategorySpinner() {
         List<String> names = new ArrayList<>();
         names.add("All");
-        for (Category c : categories) {
-            names.add(c.name);
-        }
+        for (Category c : categories) names.add(c.name);
 
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
                 requireContext(),
@@ -121,7 +114,6 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    // ---------------- STATUS BUTTONS ----------------
     private void setupStatusButtons() {
         View.OnClickListener statusClick = v -> {
             btnAll.setSelected(false);
@@ -151,7 +143,6 @@ public class HomeFragment extends Fragment {
         btnPlan.setOnClickListener(statusClick);
     }
 
-    // ---------------- SORT BUTTON ----------------
     private void setupSortButton() {
         btnSort.setOnClickListener(v -> {
             androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(requireContext(), btnSort);
@@ -171,11 +162,10 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    // ---------------- LOAD DATA ----------------
     private void loadCategoriesAndItems() {
         executor.execute(() -> {
             categories = db.categoryDao().getAllCategories();
-            allItems = db.itemDao().getAllItems();
+            allItems = db.itemDao().getAllItemsOrdered();
 
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
@@ -186,7 +176,6 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    // ---------------- FILTER + SORT ----------------
     private void applyFilter() {
         filteredItems.clear();
         for (Item item : allItems) {
@@ -195,9 +184,9 @@ public class HomeFragment extends Fragment {
             if (matchCategory && matchStatus) filteredItems.add(item);
         }
 
-        // Sort according to selected option
         switch (currentSort) {
-            case STATUS: break;
+            case STATUS:
+                break;
             case ALPHABET_ASC:
                 Collections.sort(filteredItems, (a, b) -> a.title.compareToIgnoreCase(b.title));
                 break;
@@ -212,19 +201,17 @@ public class HomeFragment extends Fragment {
                 break;
         }
 
-        // Update total entries
         tvTotalEntries.setText("Total Entries: " + filteredItems.size());
         adapter.notifyDataSetChanged();
     }
 
-    // ---------------- DRAG AND DROP ----------------
     private void setupDragAndDrop() {
         ItemTouchHelper.Callback callback = new ItemTouchHelper.Callback() {
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView,
                                         @NonNull RecyclerView.ViewHolder viewHolder) {
                 int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
-                return makeMovementFlags(dragFlags, 0); // disable swipe
+                return makeMovementFlags(dragFlags, 0);
             }
 
             @Override
@@ -237,7 +224,7 @@ public class HomeFragment extends Fragment {
                 Collections.swap(filteredItems, from, to);
                 adapter.notifyItemMoved(from, to);
 
-                saveItemOrder(); // persist changes
+                saveItemOrder();
                 return true;
             }
 
@@ -246,7 +233,7 @@ public class HomeFragment extends Fragment {
 
             @Override
             public boolean isLongPressDragEnabled() {
-                return true; // enable long press
+                return true;
             }
         };
 
@@ -254,13 +241,12 @@ public class HomeFragment extends Fragment {
         touchHelper.attachToRecyclerView(recyclerView);
     }
 
-    // ---------------- SAVE ORDER ----------------
     private void saveItemOrder() {
         executor.execute(() -> {
             for (int i = 0; i < filteredItems.size(); i++) {
                 Item item = filteredItems.get(i);
-                item.orderIndex = i; // orderIndex must exist in Item entity
-                db.itemDao().update(item); // add this method in DAO
+                item.orderIndex = i;
+                db.itemDao().update(item);
             }
         });
     }

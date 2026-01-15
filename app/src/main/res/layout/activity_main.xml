@@ -6,12 +6,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- MAIN CONTENT -->
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- TOP BAR -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
@@ -21,14 +19,12 @@
             app:titleTextColor="@android:color/white"
             android:background="?attr/colorPrimary"/>
 
-        <!-- FRAGMENT AREA -->
         <FrameLayout
             android:id="@+id/fragmentContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginTop="?attr/actionBarSize"/>
 
-        <!-- BOTTOM NAVIGATION -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNavigation"
             android:layout_width="match_parent"
@@ -36,21 +32,19 @@
             android:layout_gravity="bottom"
             app:menu="@menu/bottom_menu"/>
 
-        <!-- FAB – floating above BottomNavigationView -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabAdd"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:contentDescription="@string/fab"
             android:src="@drawable/ic_add"
             android:tint="@android:color/white"
             android:backgroundTint="?attr/colorPrimary"
             android:layout_gravity="bottom|end"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="100dp"/> <!-- adjust this to control height -->
-
+            android:layout_marginBottom="100dp"/>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <!-- SIDEBAR -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"
         android:layout_width="240dp"
@@ -58,5 +52,4 @@
         android:layout_gravity="start"
         app:headerLayout="@layout/nav_header_main"
         app:menu="@menu/drawer_menu"/>
-
 </androidx.drawerlayout.widget.DrawerLayout>

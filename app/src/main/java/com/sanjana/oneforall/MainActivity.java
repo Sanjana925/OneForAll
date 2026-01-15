@@ -5,36 +5,35 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.TextView;
-
-import androidx.appcompat.app.AppCompatDelegate;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
-import com.google.android.material.imageview.ShapeableImageView;
-import com.sanjana.oneforall.ui.backup.BackupFragment;
-
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.navigation.NavigationView;
-import com.sanjana.oneforall.ui.category.CategoryFragment;
+import com.sanjana.oneforall.ui.backup.BackupFragment;
+import com.sanjana.oneforall.ui.calendar.AddCalendarEventActivity;
+import com.sanjana.oneforall.ui.calendar.CalendarFragment;
 import com.sanjana.oneforall.ui.category.AddEditCategoryActivity;
+import com.sanjana.oneforall.ui.category.CategoryFragment;
 import com.sanjana.oneforall.ui.home.AddEditItemActivity;
 import com.sanjana.oneforall.ui.home.HomeFragment;
 import com.sanjana.oneforall.ui.list.AddEditListActivity;
 import com.sanjana.oneforall.ui.list.ListFragment;
-import com.sanjana.oneforall.ui.search.SearchFragment;
-import com.sanjana.oneforall.ui.calendar.CalendarFragment;
 import com.sanjana.oneforall.ui.profile.ProfileFragment;
+import com.sanjana.oneforall.ui.search.SearchFragment;
 import com.sanjana.oneforall.ui.settings.SettingsFragment;
-import com.sanjana.oneforall.ui.calendar.AddCalendarEventActivity;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,14 +61,12 @@ public class MainActivity extends AppCompatActivity {
 
         toolbar.setNavigationOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
-        // Load default fragment
         if (savedInstanceState == null) {
             loadFragment(new HomeFragment());
             bottomNavigationView.setSelectedItemId(R.id.nav_home);
             fab.show();
         }
 
-        // Bottom navigation selection
         bottomNavigationView.setOnItemSelectedListener(item -> {
             Fragment fragment = null;
             int id = item.getItemId();
@@ -85,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                 fab.hide();
             } else if (id == R.id.nav_calendar) {
                 fragment = new CalendarFragment();
-                fab.show(); // show FAB for Calendar
+                fab.show();
             } else if (id == R.id.nav_list) {
                 fragment = new ListFragment();
                 fab.show();
@@ -98,7 +95,6 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
-        // Drawer menu click
         navigationView.setNavigationItemSelectedListener(item -> {
             drawerLayout.closeDrawer(GravityCompat.START);
             int id = item.getItemId();
@@ -108,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
                         .replace(R.id.fragmentContainer, new ProfileFragment())
                         .addToBackStack(null)
                         .commit();
-                fab.hide(); // hide FAB
+                fab.hide();
             } else if (id == R.id.drawer_settings) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragmentContainer, new SettingsFragment())
@@ -125,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // FAB click listener
         fab.setOnClickListener(v -> {
             Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
 
@@ -146,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 .replace(R.id.fragmentContainer, fragment)
                 .commit();
     }
+
     public void updateDrawerProfile() {
         View header = navigationView.getHeaderView(0);
         ShapeableImageView ivAvatar = header.findViewById(R.id.ivHeaderAvatar);
@@ -153,16 +149,21 @@ public class MainActivity extends AppCompatActivity {
 
         SharedPreferences prefs = getSharedPreferences("oneforall_prefs", MODE_PRIVATE);
         String username = prefs.getString("username", "User");
-        String avatarUriStr = prefs.getString("avatar_uri", null);
+        String avatarPath = prefs.getString("avatar_uri", null);
 
         tvUsername.setText(username);
-        if (avatarUriStr != null) {
-            ivAvatar.setImageURI(Uri.parse(avatarUriStr));
+
+        if (avatarPath != null) {
+            File avatarFile = new File(avatarPath);
+            if (avatarFile.exists()) {
+                ivAvatar.setImageURI(Uri.fromFile(avatarFile));
+            } else {
+                ivAvatar.setImageResource(R.drawable.ic_avatar);
+            }
         } else {
-            ivAvatar.setImageResource(R.drawable.ic_avatar); // placeholder
+            ivAvatar.setImageResource(R.drawable.ic_avatar);
         }
     }
-
 
     public void applyTheme(boolean darkThemeEnabled) {
         if (darkThemeEnabled) {
@@ -171,5 +172,4 @@ public class MainActivity extends AppCompatActivity {
             getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
     }
-
 }

@@ -48,7 +48,6 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ListIt
         ListItem item = items.get(position);
         holder.tvTitle.setText(item.title);
 
-        // ✅ Rich text preview
         Spanned spannedContent;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             spannedContent = Html.fromHtml(item.content, Html.FROM_HTML_MODE_LEGACY);
@@ -57,12 +56,10 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ListIt
         }
         holder.tvContent.setText(spannedContent);
 
-        // Delete
         holder.btnDelete.setOnClickListener(v -> {
             if (listener != null) listener.onDelete(item);
         });
 
-        // Click card → open edit page
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, AddEditListActivity.class);
             intent.putExtra("itemId", item.id);
