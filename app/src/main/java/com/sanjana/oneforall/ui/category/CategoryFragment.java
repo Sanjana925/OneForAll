@@ -29,7 +29,7 @@ public class CategoryFragment extends Fragment {
     private AppDatabase db;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    public CategoryFragment() { }
+    public CategoryFragment() {}
 
     @Nullable
     @Override
@@ -45,24 +45,26 @@ public class CategoryFragment extends Fragment {
         adapter = new CategoryAdapter(getContext(), categories);
         recyclerView.setAdapter(adapter);
 
-        loadCategories(); // load in background
+        loadCategories();
         return view;
     }
 
     private void loadCategories() {
         executor.execute(() -> {
             List<Category> dbCategories = db.categoryDao().getAllCategories();
-            getActivity().runOnUiThread(() -> {
-                categories.clear();
-                categories.addAll(dbCategories);
-                adapter.notifyDataSetChanged();
-            });
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    categories.clear();
+                    categories.addAll(dbCategories);
+                    adapter.notifyDataSetChanged();
+                });
+            }
         });
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        loadCategories(); // refresh whenever fragment resumes
+        loadCategories();
     }
 }

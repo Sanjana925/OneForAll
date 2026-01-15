@@ -28,8 +28,7 @@ public class AddCalendarEventActivity extends AppCompatActivity {
 
     private List<Category> categories = new ArrayList<>();
     private int selectedCategoryColor = 0xFF2196F3;
-
-    private CalendarEvent existingEvent; // null if adding new
+    private CalendarEvent existingEvent;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -84,7 +83,7 @@ public class AddCalendarEventActivity extends AppCompatActivity {
                     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                         selectedCategoryColor = categories.get(position).color;
                     }
-                    @Override public void onNothingSelected(AdapterView<?> parent) { }
+                    @Override public void onNothingSelected(AdapterView<?> parent) {}
                 });
             });
         });
@@ -93,7 +92,7 @@ public class AddCalendarEventActivity extends AppCompatActivity {
     private void showDatePicker() {
         Calendar c = Calendar.getInstance();
         new DatePickerDialog(this,
-                (v, y, m, d) -> editDate.setText(String.format("%04d-%02d-%02d", y, m+1, d)),
+                (v, y, m, d) -> editDate.setText(String.format("%04d-%02d-%02d", y, m + 1, d)),
                 c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH))
                 .show();
     }
@@ -109,9 +108,10 @@ public class AddCalendarEventActivity extends AppCompatActivity {
                     editEpisodes.setText(String.valueOf(e.episodeCount));
                     editStartEp.setText(String.valueOf(e.startEp));
                     editEndEp.setText(String.valueOf(e.endEp));
-                    for (int i=0;i<categories.size();i++) {
+                    for (int i = 0; i < categories.size(); i++) {
                         if (categories.get(i).color == e.categoryColor) {
-                            spinnerCategory.setSelection(i); break;
+                            spinnerCategory.setSelection(i);
+                            break;
                         }
                     }
                     btnDelete.setVisibility(View.VISIBLE);
@@ -128,25 +128,24 @@ public class AddCalendarEventActivity extends AppCompatActivity {
         int startEp = parseInt(editStartEp.getText().toString());
         int endEp = parseInt(editEndEp.getText().toString());
 
-        if (title.isEmpty() || date.isEmpty() || episodes<=0 || startEp<=0 || endEp<startEp) {
-            Toast.makeText(this,"Please fill all fields correctly",Toast.LENGTH_SHORT).show();
+        if (title.isEmpty() || date.isEmpty() || episodes <= 0 || startEp <= 0 || endEp < startEp) {
+            Toast.makeText(this, "Please fill all fields correctly", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (existingEvent!=null) {
-            existingEvent.title=title;
-            existingEvent.date=date;
-            existingEvent.episodeCount=episodes;
-            existingEvent.startEp=startEp;
-            existingEvent.endEp=endEp;
-            existingEvent.categoryColor=selectedCategoryColor;
-
+        if (existingEvent != null) {
+            existingEvent.title = title;
+            existingEvent.date = date;
+            existingEvent.episodeCount = episodes;
+            existingEvent.startEp = startEp;
+            existingEvent.endEp = endEp;
+            existingEvent.categoryColor = selectedCategoryColor;
             executor.execute(() -> {
                 db.calendarEventDao().update(existingEvent);
                 runOnUiThread(this::finish);
             });
         } else {
-            CalendarEvent event = new CalendarEvent(title,date,episodes,startEp,endEp,selectedCategoryColor);
+            CalendarEvent event = new CalendarEvent(title, date, episodes, startEp, endEp, selectedCategoryColor);
             executor.execute(() -> {
                 db.calendarEventDao().insert(event);
                 runOnUiThread(this::finish);
@@ -155,12 +154,14 @@ public class AddCalendarEventActivity extends AppCompatActivity {
     }
 
     private void deleteEvent() {
-        if (existingEvent==null) return;
+        if (existingEvent == null) return;
         executor.execute(() -> {
             db.calendarEventDao().delete(existingEvent);
             runOnUiThread(this::finish);
         });
     }
 
-    private int parseInt(String s) { try { return Integer.parseInt(s); } catch(Exception e){return 0;} }
+    private int parseInt(String s) {
+        try { return Integer.parseInt(s); } catch (Exception e) { return 0; }
+    }
 }

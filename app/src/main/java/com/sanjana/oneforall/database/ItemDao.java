@@ -20,8 +20,6 @@ public interface ItemDao {
     void delete(Item item);
     @Query("SELECT * FROM Item ORDER BY orderIndex ASC")
     List<Item> getAllItemsOrdered();
-    @Query("SELECT * FROM Item")
-    List<Item> getAllItems();
 
     @Query("SELECT * FROM Item WHERE id = :id")
     Item getItemById(int id);

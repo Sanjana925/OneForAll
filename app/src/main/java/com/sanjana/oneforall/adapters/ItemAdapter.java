@@ -91,7 +91,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
 
                             item.startDate = null;
                             item.endDate = null;
-                            item.status = "Planned";
+                            item.status = "Watching";
                             item.currentProgress = 0;
 
                             db.itemDao().delete(item);

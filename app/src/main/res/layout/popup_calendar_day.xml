@@ -6,7 +6,6 @@
     android:orientation="vertical"
     android:padding="12dp">
 
-    <!-- Header with title and close button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -38,7 +37,6 @@
         android:layout_marginTop="8dp"
         android:background="#CCCCCC" />
 
-    <!-- Scrollable list of event items -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -50,7 +48,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingBottom="12dp">
-            <!-- Event items are added dynamically -->
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

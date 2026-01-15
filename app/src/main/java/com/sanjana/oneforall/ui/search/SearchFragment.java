@@ -67,7 +67,7 @@ public class SearchFragment extends Fragment {
 
     private void loadItems() {
         new Thread(() -> {
-            List<Item> dbItems = db.itemDao().getAllItems();
+            List<Item> dbItems = db.itemDao().getAllItemsOrdered();
 
             if (getActivity() == null) return;
             getActivity().runOnUiThread(() -> {

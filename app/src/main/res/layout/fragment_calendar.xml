@@ -44,7 +44,6 @@
         android:layout_height="wrap_content"
         android:columnCount="7">
 
-
         <TextView android:text="Sun" style="@style/WeekDay"/>
         <TextView android:text="Mon" style="@style/WeekDay"/>
         <TextView android:text="Tue" style="@style/WeekDay"/>

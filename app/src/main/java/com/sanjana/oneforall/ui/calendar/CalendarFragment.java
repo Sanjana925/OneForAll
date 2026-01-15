@@ -136,17 +136,15 @@ public class CalendarFragment extends Fragment {
                         .setMessage("Are you sure you want to delete this event?")
                         .setPositiveButton("Yes", (dialog, which) -> {
                             Executors.newSingleThreadExecutor().execute(() -> {
-                                // 1️⃣ Delete the CalendarEvent
                                 db.calendarEventDao().delete(e);
 
-                                // 2️⃣ Reset Item's startDate and endDate if all events deleted
                                 Item item = db.itemDao().getItemByTitle(e.title);
                                 if (item != null) {
                                     List<CalendarEvent> remaining = db.calendarEventDao().getEventsByTitle(item.title);
                                     if (remaining.isEmpty()) {
                                         item.startDate = null;
                                         item.endDate = null;
-                                        item.status = "Planned"; // reset status
+                                        item.status = "Planned";
                                         db.itemDao().update(item);
                                     }
                                 }

@@ -61,7 +61,6 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         db = AppDatabase.getInstance(requireContext());
@@ -84,8 +83,8 @@ public class HomeFragment extends Fragment {
 
         setupStatusButtons();
         setupSortButton();
-        loadCategoriesAndItems();
         setupDragAndDrop();
+        loadAllItems();
 
         return view;
     }
@@ -162,11 +161,10 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void loadCategoriesAndItems() {
+    private void loadAllItems() {
         executor.execute(() -> {
             categories = db.categoryDao().getAllCategories();
             allItems = db.itemDao().getAllItemsOrdered();
-
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     setupCategorySpinner();
@@ -185,20 +183,11 @@ public class HomeFragment extends Fragment {
         }
 
         switch (currentSort) {
-            case STATUS:
-                break;
-            case ALPHABET_ASC:
-                Collections.sort(filteredItems, (a, b) -> a.title.compareToIgnoreCase(b.title));
-                break;
-            case ALPHABET_DESC:
-                Collections.sort(filteredItems, (a, b) -> b.title.compareToIgnoreCase(a.title));
-                break;
-            case LAST_UPDATED_NEW:
-                Collections.sort(filteredItems, (a, b) -> Long.compare(b.lastUpdated, a.lastUpdated));
-                break;
-            case LAST_UPDATED_OLD:
-                Collections.sort(filteredItems, (a, b) -> Long.compare(a.lastUpdated, b.lastUpdated));
-                break;
+            case STATUS: break;
+            case ALPHABET_ASC: Collections.sort(filteredItems, (a,b)->a.title.compareToIgnoreCase(b.title)); break;
+            case ALPHABET_DESC: Collections.sort(filteredItems, (a,b)->b.title.compareToIgnoreCase(a.title)); break;
+            case LAST_UPDATED_NEW: Collections.sort(filteredItems, (a,b)->Long.compare(b.lastUpdated,a.lastUpdated)); break;
+            case LAST_UPDATED_OLD: Collections.sort(filteredItems, (a,b)->Long.compare(a.lastUpdated,b.lastUpdated)); break;
         }
 
         tvTotalEntries.setText("Total Entries: " + filteredItems.size());
@@ -223,13 +212,12 @@ public class HomeFragment extends Fragment {
 
                 Collections.swap(filteredItems, from, to);
                 adapter.notifyItemMoved(from, to);
-
-                saveItemOrder();
+                updateAllItemsOrder();
                 return true;
             }
 
             @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) { }
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
 
             @Override
             public boolean isLongPressDragEnabled() {
@@ -237,16 +225,20 @@ public class HomeFragment extends Fragment {
             }
         };
 
-        ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
-        touchHelper.attachToRecyclerView(recyclerView);
+        new ItemTouchHelper(callback).attachToRecyclerView(recyclerView);
     }
 
-    private void saveItemOrder() {
+    private void updateAllItemsOrder() {
         executor.execute(() -> {
             for (int i = 0; i < filteredItems.size(); i++) {
-                Item item = filteredItems.get(i);
-                item.orderIndex = i;
-                db.itemDao().update(item);
+                Item filteredItem = filteredItems.get(i);
+                for (Item item : allItems) {
+                    if (item.id == filteredItem.id) {
+                        item.orderIndex = i;
+                        db.itemDao().update(item);
+                        break;
+                    }
+                }
             }
         });
     }
@@ -254,6 +246,6 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadCategoriesAndItems();
+        loadAllItems();
     }
 }
