@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public void updateDrawerProfile() {
         View header = navigationView.getHeaderView(0);
-        ImageButton ivAvatar = header.findViewById(R.id.ivHeaderAvatar);
+        de.hdodenhof.circleimageview.CircleImageView ivAvatar = header.findViewById(R.id.ivHeaderAvatar);
         TextView tvUsername = header.findViewById(R.id.tvHeaderUsername);
 
         SharedPreferences prefs = getSharedPreferences("oneforall_prefs", MODE_PRIVATE);

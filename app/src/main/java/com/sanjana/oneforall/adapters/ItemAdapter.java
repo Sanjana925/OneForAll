@@ -69,25 +69,13 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         boolean isCompleted = item.currentProgress >= max
                 || "Completed".equals(item.status);
 
-        // ---- PROGRESS UI ----
-        if (isCompleted) {
-            h.progressBar.setVisibility(View.GONE);
-            h.tvProgress.setVisibility(View.GONE);
-            h.btnIncrease.setVisibility(View.GONE);
-            h.btnDecrease.setVisibility(View.GONE);
-        } else {
-            h.progressBar.setVisibility(View.VISIBLE);
-            h.tvProgress.setVisibility(View.VISIBLE);
+// ---- PROGRESS UI ----
+        h.progressBar.setMax(max);
+        h.progressBar.setProgress(item.currentProgress);
+        h.tvProgress.setText(item.currentProgress + "/" + max);
 
-            h.progressBar.setMax(max);
-            h.progressBar.setProgress(item.currentProgress);
-            h.tvProgress.setText(item.currentProgress + "/" + max);
-
-            h.btnIncrease.setVisibility(View.VISIBLE);
-            h.btnDecrease.setVisibility(
-                    item.currentProgress > 0 ? View.VISIBLE : View.GONE
-            );
-        }
+        h.btnIncrease.setVisibility(item.currentProgress < max ? View.VISIBLE : View.GONE);
+        h.btnDecrease.setVisibility(item.currentProgress > 0 ? View.VISIBLE : View.GONE);
 
         // ---- BUTTONS ----
         h.btnIncrease.setOnClickListener(v -> changeProgress(item, position, true));
@@ -137,39 +125,46 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
             int old = item.currentProgress;
             int max = item.totalProgress > 0 ? item.totalProgress : 100;
 
+            // Update progress
             if (increase && old < max) item.currentProgress++;
             if (!increase && old > 0) item.currentProgress--;
 
             item.lastUpdated = System.currentTimeMillis();
             String today = LocalDate.now().toString();
 
-            // STARTED
-            if (old == 0 && item.currentProgress == 1) {
+            // Update startDate if progress just started
+            if (item.currentProgress > 0 && item.startDate == null) {
                 item.startDate = today;
+            }
+
+            // Update status based on current progress
+            if (item.currentProgress == 0) {
+                item.status = "Planned";
+
+                // Remove calendar event for today
+                CalendarEvent e = db.calendarEventDao().getEventByTitleAndDate(item.title, today);
+                if (e != null) db.calendarEventDao().delete(e);
+
+            } else if (item.currentProgress >= max) {
+                item.status = "Completed";
+            } else {
                 item.status = "Watching";
             }
 
-            // WATCHING / COMPLETED
+            // Add or update calendar event if progress > 0
             if (item.currentProgress > 0) {
                 addOrUpdateProgressEvent(item, today);
-                item.status =
-                        item.currentProgress == max ? "Completed" : "Watching";
             }
 
-            // REMOVE EVENT IF PROGRESS = 0
-            if (item.currentProgress == 0) {
-                CalendarEvent e =
-                        db.calendarEventDao()
-                                .getEventByTitleAndDate(item.title, today);
-                if (e != null) db.calendarEventDao().delete(e);
-            }
-
+            // Update DB
             db.itemDao().update(item);
 
+            // Update UI
             new Handler(Looper.getMainLooper())
                     .post(() -> notifyItemChanged(position));
         });
     }
+
 
     // ---------------- CALENDAR (SINGLE EVENT PER DAY) ----------------
     private void addOrUpdateProgressEvent(Item item, String date) {

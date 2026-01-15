@@ -8,13 +8,12 @@
     android:layout_height="160dp"
     android:background="?attr/colorPrimary">
 
-    <ImageButton
+    <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/ivHeaderAvatar"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:background="@drawable/circle_background"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_avatar"/>
+        android:src="@drawable/ic_avatar"
+        android:scaleType="centerCrop"/>
 
     <TextView
         android:id="@+id/tvHeaderUsername"
