@@ -6,11 +6,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -21,6 +24,7 @@ import com.sanjana.oneforall.database.Category;
 import com.sanjana.oneforall.database.Item;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,13 +38,22 @@ public class HomeFragment extends Fragment {
     private AppDatabase db;
 
     private Spinner categorySpinner;
-    private Button btnWatching, btnCompleted, btnOnHold, btnDropped, btnPlan;
+    private ImageButton btnSort;
+    private TextView tvTotalEntries;
+    private Button btnAll, btnWatching, btnCompleted, btnOnHold, btnDropped, btnPlan;
 
     private String selectedStatus = "All";
     private int selectedCategoryId = 0; // 0 = All
     private List<Category> categories = new ArrayList<>();
 
     private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    // Enum for sort options
+    private enum SortOption {
+        STATUS, ALPHABET_ASC, ALPHABET_DESC, LAST_UPDATED_NEW, LAST_UPDATED_OLD
+    }
+
+    private SortOption currentSort = SortOption.LAST_UPDATED_NEW;
 
     public HomeFragment() {}
 
@@ -60,10 +73,13 @@ public class HomeFragment extends Fragment {
         adapter = new ItemAdapter(getContext(), filteredItems);
         recyclerView.setAdapter(adapter);
 
-        // Spinner
-        categorySpinner = view.findViewById(R.id.filterSpinner);
+        // Spinner, Sort Button & Total Entries
+        categorySpinner = view.findViewById(R.id.spinnerCategory);
+        btnSort = view.findViewById(R.id.btnSort);
+        tvTotalEntries = view.findViewById(R.id.tvTotalEntries);
 
-        // Status buttons
+        // Status Buttons
+        btnAll = view.findViewById(R.id.btnAll);
         btnWatching = view.findViewById(R.id.btnWatching);
         btnCompleted = view.findViewById(R.id.btnCompleted);
         btnOnHold = view.findViewById(R.id.btnOnHold);
@@ -71,11 +87,14 @@ public class HomeFragment extends Fragment {
         btnPlan = view.findViewById(R.id.btnPlan);
 
         setupStatusButtons();
-        loadCategoriesAndItems(); // load both in background
+        setupSortButton();
+        loadCategoriesAndItems();
+        setupDragAndDrop();
 
         return view;
     }
 
+    // ---------------- CATEGORY SPINNER ----------------
     private void setupCategorySpinner() {
         List<String> names = new ArrayList<>();
         names.add("All");
@@ -102,8 +121,10 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    // ---------------- STATUS BUTTONS ----------------
     private void setupStatusButtons() {
         View.OnClickListener statusClick = v -> {
+            btnAll.setSelected(false);
             btnWatching.setSelected(false);
             btnCompleted.setSelected(false);
             btnOnHold.setSelected(false);
@@ -112,16 +133,17 @@ public class HomeFragment extends Fragment {
 
             v.setSelected(true);
 
-            if (v == btnWatching) selectedStatus = "Watching";
+            if (v == btnAll) selectedStatus = "All";
+            else if (v == btnWatching) selectedStatus = "Watching";
             else if (v == btnCompleted) selectedStatus = "Completed";
             else if (v == btnOnHold) selectedStatus = "On-Hold";
             else if (v == btnDropped) selectedStatus = "Dropped";
             else if (v == btnPlan) selectedStatus = "Plan to Watch";
-            else selectedStatus = "All";
 
             applyFilter();
         };
 
+        btnAll.setOnClickListener(statusClick);
         btnWatching.setOnClickListener(statusClick);
         btnCompleted.setOnClickListener(statusClick);
         btnOnHold.setOnClickListener(statusClick);
@@ -129,18 +151,42 @@ public class HomeFragment extends Fragment {
         btnPlan.setOnClickListener(statusClick);
     }
 
+    // ---------------- SORT BUTTON ----------------
+    private void setupSortButton() {
+        btnSort.setOnClickListener(v -> {
+            androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(requireContext(), btnSort);
+            popup.getMenuInflater().inflate(R.menu.sort_menu, popup.getMenu());
+            popup.setOnMenuItemClickListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.sort_status) currentSort = SortOption.STATUS;
+                else if (id == R.id.sort_alpha_asc) currentSort = SortOption.ALPHABET_ASC;
+                else if (id == R.id.sort_alpha_desc) currentSort = SortOption.ALPHABET_DESC;
+                else if (id == R.id.sort_last_new) currentSort = SortOption.LAST_UPDATED_NEW;
+                else if (id == R.id.sort_last_old) currentSort = SortOption.LAST_UPDATED_OLD;
+
+                applyFilter();
+                return true;
+            });
+            popup.show();
+        });
+    }
+
+    // ---------------- LOAD DATA ----------------
     private void loadCategoriesAndItems() {
         executor.execute(() -> {
             categories = db.categoryDao().getAllCategories();
             allItems = db.itemDao().getAllItems();
 
-            getActivity().runOnUiThread(() -> {
-                setupCategorySpinner();
-                applyFilter();
-            });
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    setupCategorySpinner();
+                    applyFilter();
+                });
+            }
         });
     }
 
+    // ---------------- FILTER + SORT ----------------
     private void applyFilter() {
         filteredItems.clear();
         for (Item item : allItems) {
@@ -148,12 +194,80 @@ public class HomeFragment extends Fragment {
             boolean matchStatus = (selectedStatus.equals("All") || item.status.equals(selectedStatus));
             if (matchCategory && matchStatus) filteredItems.add(item);
         }
+
+        // Sort according to selected option
+        switch (currentSort) {
+            case STATUS: break;
+            case ALPHABET_ASC:
+                Collections.sort(filteredItems, (a, b) -> a.title.compareToIgnoreCase(b.title));
+                break;
+            case ALPHABET_DESC:
+                Collections.sort(filteredItems, (a, b) -> b.title.compareToIgnoreCase(a.title));
+                break;
+            case LAST_UPDATED_NEW:
+                Collections.sort(filteredItems, (a, b) -> Long.compare(b.lastUpdated, a.lastUpdated));
+                break;
+            case LAST_UPDATED_OLD:
+                Collections.sort(filteredItems, (a, b) -> Long.compare(a.lastUpdated, b.lastUpdated));
+                break;
+        }
+
+        // Update total entries
+        tvTotalEntries.setText("Total Entries: " + filteredItems.size());
         adapter.notifyDataSetChanged();
+    }
+
+    // ---------------- DRAG AND DROP ----------------
+    private void setupDragAndDrop() {
+        ItemTouchHelper.Callback callback = new ItemTouchHelper.Callback() {
+            @Override
+            public int getMovementFlags(@NonNull RecyclerView recyclerView,
+                                        @NonNull RecyclerView.ViewHolder viewHolder) {
+                int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+                return makeMovementFlags(dragFlags, 0); // disable swipe
+            }
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                int from = viewHolder.getAdapterPosition();
+                int to = target.getAdapterPosition();
+
+                Collections.swap(filteredItems, from, to);
+                adapter.notifyItemMoved(from, to);
+
+                saveItemOrder(); // persist changes
+                return true;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) { }
+
+            @Override
+            public boolean isLongPressDragEnabled() {
+                return true; // enable long press
+            }
+        };
+
+        ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
+        touchHelper.attachToRecyclerView(recyclerView);
+    }
+
+    // ---------------- SAVE ORDER ----------------
+    private void saveItemOrder() {
+        executor.execute(() -> {
+            for (int i = 0; i < filteredItems.size(); i++) {
+                Item item = filteredItems.get(i);
+                item.orderIndex = i; // orderIndex must exist in Item entity
+                db.itemDao().update(item); // add this method in DAO
+            }
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        loadCategoriesAndItems(); // refresh safely in background
+        loadCategoriesAndItems();
     }
 }

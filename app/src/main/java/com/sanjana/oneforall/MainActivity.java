@@ -1,13 +1,22 @@
 package com.sanjana.oneforall;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatDelegate;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceManager;
+
 import com.sanjana.oneforall.ui.backup.BackupFragment;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -22,6 +31,8 @@ import com.sanjana.oneforall.ui.list.AddEditListActivity;
 import com.sanjana.oneforall.ui.list.ListFragment;
 import com.sanjana.oneforall.ui.search.SearchFragment;
 import com.sanjana.oneforall.ui.calendar.CalendarFragment;
+import com.sanjana.oneforall.ui.profile.ProfileFragment;
+import com.sanjana.oneforall.ui.settings.SettingsFragment;
 import com.sanjana.oneforall.ui.calendar.AddCalendarEventActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -34,12 +45,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean dark = prefs.getBoolean("dark_theme_enabled", false);
+        applyTheme(dark);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         drawerLayout = findViewById(R.id.drawerLayout);
         bottomNavigationView = findViewById(R.id.bottomNavigation);
         navigationView = findViewById(R.id.navigationView);
+        updateDrawerProfile();
+
         toolbar = findViewById(R.id.topAppBar);
         fab = findViewById(R.id.fabAdd);
 
@@ -87,15 +103,23 @@ public class MainActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.drawer_profile) {
-                // Open Profile
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragmentContainer, new ProfileFragment())
+                        .addToBackStack(null)
+                        .commit();
+                fab.hide(); // hide FAB
             } else if (id == R.id.drawer_settings) {
-                // Open Settings
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragmentContainer, new SettingsFragment())
+                        .addToBackStack(null)
+                        .commit();
+                fab.hide();
             } else if (id == R.id.drawer_backup) {
-                // Open a new BackupFragment
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragmentContainer, new BackupFragment())
                         .addToBackStack(null)
                         .commit();
+                fab.hide();
             }
             return true;
         });
@@ -121,4 +145,28 @@ public class MainActivity extends AppCompatActivity {
                 .replace(R.id.fragmentContainer, fragment)
                 .commit();
     }
+    public void updateDrawerProfile() {
+        View header = navigationView.getHeaderView(0);
+        ImageButton ivAvatar = header.findViewById(R.id.ivHeaderAvatar);
+        TextView tvUsername = header.findViewById(R.id.tvHeaderUsername);
+
+        SharedPreferences prefs = getSharedPreferences("oneforall_prefs", MODE_PRIVATE);
+        String username = prefs.getString("username", "User");
+        String avatarUriStr = prefs.getString("avatar_uri", null);
+
+        tvUsername.setText(username);
+        if (avatarUriStr != null) {
+            ivAvatar.setImageURI(Uri.parse(avatarUriStr));
+        }
+    }
+
+
+    public void applyTheme(boolean darkThemeEnabled) {
+        if (darkThemeEnabled) {
+            getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
+    }
+
 }

@@ -116,6 +116,17 @@ public class AddEditItemActivity extends AppCompatActivity {
         btnPlan.setSelected(false);
     }
 
+    private void updateStatusButtons(String status) {
+        clearStatusSelection();
+        switch (status) {
+            case "Watching": btnWatching.setSelected(true); break;
+            case "Completed": btnCompleted.setSelected(true); break;
+            case "On-Hold": btnOnHold.setSelected(true); break;
+            case "Dropped": btnDropped.setSelected(true); break;
+            default: btnPlan.setSelected(true);
+        }
+    }
+
     // ---------------------- PROGRESS ----------------------
     private void setupProgressButtons() {
         btnIncreaseProgress.setOnClickListener(v -> changeProgress(true));
@@ -161,7 +172,6 @@ public class AddEditItemActivity extends AppCompatActivity {
                     db.dailyProgressDao().update(dp);
                 }
 
-                // Add/update calendar event for today (draggable)
                 addOrUpdateWatchingEvent(today, title, dp.firstEp, dp.lastEp, selectedCategoryColor);
             });
             selectedStatus = "Watching";
@@ -186,17 +196,6 @@ public class AddEditItemActivity extends AppCompatActivity {
         }
 
         updateStatusButtons(selectedStatus);
-    }
-
-    private void updateStatusButtons(String status) {
-        clearStatusSelection();
-        switch (status) {
-            case "Watching": btnWatching.setSelected(true); break;
-            case "Completed": btnCompleted.setSelected(true); break;
-            case "On-Hold": btnOnHold.setSelected(true); break;
-            case "Dropped": btnDropped.setSelected(true); break;
-            default: btnPlan.setSelected(true);
-        }
     }
 
     // ---------------------- DATES ----------------------
@@ -275,16 +274,35 @@ public class AddEditItemActivity extends AppCompatActivity {
     }
 
     // ---------------------- SAVE ----------------------
+
     private void saveItem() {
         String title = editTitle.getText().toString().trim();
-        if (title.isEmpty()) { Toast.makeText(this, "Enter title", Toast.LENGTH_SHORT).show(); return; }
+        if (title.isEmpty()) {
+            Toast.makeText(this, "Enter title", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         int current = parseInt(editCurrent.getText().toString());
         int total = parseInt(editTotal.getText().toString());
+        int score = parseInt(editScore.getText().toString());
+        String notes = editNotes.getText().toString().trim();
+        String startDate = editStart.getText().toString().trim();
+        String endDate = editEnd.getText().toString().trim();
 
-        Item item = new Item(title, selectedCategoryId, selectedStatus, current, total,
-                editStart.getText().toString().trim(), editEnd.getText().toString().trim(),
-                parseInt(editScore.getText().toString()), editNotes.getText().toString().trim());
+        // -------------------- CREATE OR UPDATE ITEM --------------------
+        Item item = new Item(
+                title,
+                selectedCategoryId,
+                selectedStatus,
+                current,
+                total,
+                startDate,
+                endDate,
+                score,
+                notes,
+                System.currentTimeMillis(), // <-- lastUpdated
+                0 // orderIndex default
+        );
 
         executor.execute(() -> {
             if (isEditMode) {
@@ -295,9 +313,13 @@ public class AddEditItemActivity extends AppCompatActivity {
                 item.id = (int) id;
             }
 
-            // Add start/end calendar events
-            if (current > 0) addCalendarEvent(item.startDate, title + " (Started)", 1, 1, 1, selectedCategoryColor);
-            if (current >= total && total > 0) addCalendarEvent(item.endDate, title + " (Ended)", 0, 0, 0, selectedCategoryColor);
+            // -------------------- CALENDAR EVENTS --------------------
+            if (current > 0) {
+                addCalendarEvent(item.startDate, title + " (Started)", 1, 1, 1, selectedCategoryColor);
+            }
+            if (current >= total && total > 0) {
+                addCalendarEvent(item.endDate, title + " (Ended)", 0, 0, 0, selectedCategoryColor);
+            }
 
             runOnUiThread(this::finish);
         });
@@ -308,22 +330,17 @@ public class AddEditItemActivity extends AppCompatActivity {
         if (existingItem == null) return;
 
         executor.execute(() -> {
-            // 1. Delete the item from DB
             db.itemDao().delete(existingItem);
 
-            // 2. Delete calendar events
             removeCalendarEvent(existingItem.startDate, existingItem.title + " (Started)");
             removeCalendarEvent(existingItem.endDate, existingItem.title + " (Ended)");
 
-            // 3. Delete daily watching events
             db.dailyProgressDao().getAllByItem(existingItem.id).forEach(dp ->
                     removeWatchingEventByPrefix(dp.date, existingItem.title)
             );
 
-            // 4. Delete daily progress entries
             db.dailyProgressDao().deleteByItem(existingItem.id);
 
-            // 5. Clear UI fields on main thread
             runOnUiThread(() -> {
                 editTitle.setText("");
                 editCurrent.setText("");
@@ -339,7 +356,6 @@ public class AddEditItemActivity extends AppCompatActivity {
             });
         });
     }
-
 
     // ---------------------- CALENDAR ----------------------
     private void addOrUpdateWatchingEvent(String date, String title, int firstEp, int lastEp, int color) {

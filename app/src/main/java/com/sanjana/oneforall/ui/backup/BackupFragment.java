@@ -10,8 +10,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
@@ -26,8 +24,11 @@ public class BackupFragment extends Fragment {
 
     private Button btnBackup, btnRestore, btnShare;
 
-    // Launcher for folder/file creation
-    private ActivityResultLauncher<Intent> createDocumentLauncher;
+    // Folder & file
+    private final File backupFolder =
+            new File(Environment.getExternalStorageDirectory(), "OneForAllBackup");
+    private final File backupFile =
+            new File(backupFolder, "oneforall_backup.db");
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -40,19 +41,10 @@ public class BackupFragment extends Fragment {
         btnRestore = view.findViewById(R.id.btnRestore);
         btnShare = view.findViewById(R.id.btnShare);
 
-        // Launcher to select file path for backup
-        createDocumentLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == getActivity().RESULT_OK) {
-                        if (result.getData() != null) {
-                            Uri uri = result.getData().getData();
-                            if (uri != null) backupToUri(uri);
-                        }
-                    }
-                });
+        // Create folder if missing
+        if (!backupFolder.exists()) backupFolder.mkdirs();
 
-        btnBackup.setOnClickListener(v -> createBackupFile());
+        btnBackup.setOnClickListener(v -> backupDatabase());
         btnRestore.setOnClickListener(v -> restoreDatabase());
         btnShare.setOnClickListener(v -> shareBackup());
 
@@ -60,44 +52,36 @@ public class BackupFragment extends Fragment {
     }
 
     // ---------------------- BACKUP ----------------------
-    private void createBackupFile() {
-        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_TITLE, "oneforall_backup.db");
-        createDocumentLauncher.launch(intent);
-    }
-
-    private void backupToUri(Uri uri) {
+    private void backupDatabase() {
         try {
             File dbFile = requireContext().getDatabasePath("oneforall.db");
 
             try (FileChannel src = new FileInputStream(dbFile).getChannel();
-                 // Open writable file descriptor for the URI
-                 FileChannel dst = new FileOutputStream(
-                         requireContext().getContentResolver().openFileDescriptor(uri, "w").getFileDescriptor()
-                 ).getChannel()) {
+                 FileChannel dst = new FileOutputStream(backupFile).getChannel()) {
 
                 dst.transferFrom(src, 0, src.size());
             }
 
-            Toast.makeText(getContext(), "Backup saved!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(),
+                    "Backup saved to " + backupFile.getAbsolutePath(),
+                    Toast.LENGTH_SHORT).show();
+
         } catch (Exception e) {
-            Toast.makeText(getContext(), "Backup failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(),
+                    "Backup failed: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
         }
     }
 
     // ---------------------- RESTORE ----------------------
     private void restoreDatabase() {
         try {
-            File dbFile = requireContext().getDatabasePath("oneforall.db");
-            File backupFile = new File(Environment.getExternalStorageDirectory(),
-                    "OneForAllBackup/oneforall_backup.db");
-
             if (!backupFile.exists()) {
                 Toast.makeText(getContext(), "No backup found!", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            File dbFile = requireContext().getDatabasePath("oneforall.db");
 
             try (FileChannel src = new FileInputStream(backupFile).getChannel();
                  FileChannel dst = new FileOutputStream(dbFile).getChannel()) {
@@ -105,18 +89,20 @@ public class BackupFragment extends Fragment {
                 dst.transferFrom(src, 0, src.size());
             }
 
-            Toast.makeText(getContext(), "Database restored!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(),
+                    "Database restored successfully!",
+                    Toast.LENGTH_SHORT).show();
+
         } catch (Exception e) {
-            Toast.makeText(getContext(), "Restore failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(),
+                    "Restore failed: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
         }
     }
 
     // ---------------------- SHARE ----------------------
     private void shareBackup() {
         try {
-            File backupFile = new File(Environment.getExternalStorageDirectory(),
-                    "OneForAllBackup/oneforall_backup.db");
-
             if (!backupFile.exists()) {
                 Toast.makeText(getContext(), "No backup to share!", Toast.LENGTH_SHORT).show();
                 return;
@@ -127,8 +113,11 @@ public class BackupFragment extends Fragment {
             shareIntent.setType("application/octet-stream");
             shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
             startActivity(Intent.createChooser(shareIntent, "Share Backup via"));
+
         } catch (Exception e) {
-            Toast.makeText(getContext(), "Share failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(),
+                    "Share failed: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
         }
     }
 }

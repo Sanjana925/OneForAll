@@ -1,11 +1,12 @@
 package com.sanjana.oneforall.ui.calendar;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -15,18 +16,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.sanjana.oneforall.adapters.CalendarAdapter;
 import com.sanjana.oneforall.adapters.DayCell;
-import com.sanjana.oneforall.adapters.CalendarAdapter.DragData;
 import com.sanjana.oneforall.database.AppDatabase;
 import com.sanjana.oneforall.database.CalendarEvent;
+import com.sanjana.oneforall.database.Item;
 import com.sanjana.oneforall.R;
-
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
+import com.sanjana.oneforall.ui.calendar.AddCalendarEventActivity;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 
 public class CalendarFragment extends Fragment {
 
@@ -103,65 +104,75 @@ public class CalendarFragment extends Fragment {
     private void showPopup(DayCell cell) {
         if (cell.events.isEmpty()) return;
 
-        Executors.newSingleThreadExecutor().execute(() -> {
-            LinearLayout root = new LinearLayout(requireContext());
-            root.setOrientation(LinearLayout.VERTICAL);
-            root.setPadding(16,16,16,16);
+        View popupView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.popup_calendar_day, null);
 
-            for (CalendarEvent e : cell.events) {
-                LinearLayout card = new LinearLayout(requireContext());
-                card.setOrientation(LinearLayout.VERTICAL);
-                card.setPadding(14,14,14,14);
+        TextView tvPopupTitle = popupView.findViewById(R.id.tvPopupTitle);
+        LinearLayout llEventList = popupView.findViewById(R.id.llEventList);
+        ImageButton btnClose = popupView.findViewById(R.id.btnPopupClose);
 
-                GradientDrawable bg = new GradientDrawable();
-                bg.setCornerRadius(8f);
-                bg.setColor(0xFFFFFFFF);
-                bg.setStroke(1, 0xFFDDDDDD);
-                card.setBackground(bg);
+        tvPopupTitle.setText("Events • " + cell.date);
+        llEventList.removeAllViews();
 
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                lp.topMargin = 10;
-                card.setLayoutParams(lp);
+        for (CalendarEvent e : cell.events) {
+            LinearLayout eventItem = (LinearLayout) LayoutInflater.from(requireContext())
+                    .inflate(R.layout.popup_calendar_day_item, llEventList, false);
 
-                TextView tvTitle = new TextView(requireContext());
-                tvTitle.setText(e.title);
-                tvTitle.setTextSize(16f);
-                tvTitle.setTypeface(null, Typeface.BOLD);
-                tvTitle.setTextColor(e.categoryColor);
+            TextView tvTitle = eventItem.findViewById(R.id.tvEventTitle);
+            TextView tvWatched = eventItem.findViewById(R.id.tvWatched);
+            TextView tvRange = eventItem.findViewById(R.id.tvRange);
+            ImageButton btnEdit = eventItem.findViewById(R.id.btnEditEvent);
+            ImageButton btnDelete = eventItem.findViewById(R.id.btnDeleteEvent);
 
-                TextView tvWatched = new TextView(requireContext());
-                tvWatched.setText("Watched: " + e.episodeCount + " eps");
-                tvWatched.setTextSize(14f);
-                tvWatched.setTextColor(e.categoryColor);
+            tvTitle.setText(e.title);
+            tvWatched.setText("Watched: " + e.episodeCount + " eps");
+            tvRange.setText("Range: Ep " + e.startEp + " - " + e.endEp);
 
-                TextView tvRange = new TextView(requireContext());
-                tvRange.setText("Range: Ep " + e.startEp + " - " + e.endEp);
-                tvRange.setTextSize(14f);
-                tvRange.setTextColor(e.categoryColor);
+            btnEdit.setOnClickListener(v -> AddCalendarEventActivity.start(requireContext(), e.id));
 
-                card.addView(tvTitle);
-                card.addView(tvWatched);
-                card.addView(tvRange);
+            btnDelete.setOnClickListener(v -> {
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Delete Event")
+                        .setMessage("Are you sure you want to delete this event?")
+                        .setPositiveButton("Yes", (dialog, which) -> {
+                            Executors.newSingleThreadExecutor().execute(() -> {
+                                // 1️⃣ Delete the CalendarEvent
+                                db.calendarEventDao().delete(e);
 
-                root.addView(card);
-            }
+                                // 2️⃣ Reset Item's startDate and endDate if all events deleted
+                                Item item = db.itemDao().getItemByTitle(e.title);
+                                if (item != null) {
+                                    List<CalendarEvent> remaining = db.calendarEventDao().getEventsByTitle(item.title);
+                                    if (remaining.isEmpty()) {
+                                        item.startDate = null;
+                                        item.endDate = null;
+                                        item.status = "Planned"; // reset status
+                                        db.itemDao().update(item);
+                                    }
+                                }
 
-            requireActivity().runOnUiThread(() -> {
-                ScrollView sv = new ScrollView(requireContext());
-                sv.addView(root);
-                new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                        .setTitle("Details • " + cell.date)
-                        .setView(sv)
-                        .setPositiveButton("Close", null)
+                                requireActivity().runOnUiThread(() -> {
+                                    llEventList.removeView(eventItem);
+                                    loadMonth();
+                                });
+                            });
+                        })
+                        .setNegativeButton("No", null)
                         .show();
             });
-        });
+
+            llEventList.addView(eventItem);
+        }
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(popupView)
+                .create();
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
     }
 
-    private void onDragDrop(DragData data, DayCell targetCell) {
+    private void onDragDrop(CalendarAdapter.DragData data, DayCell targetCell) {
         Executors.newSingleThreadExecutor().execute(() -> {
             db.calendarEventDao().updateEventDate(data.event.id, targetCell.date);
             requireActivity().runOnUiThread(this::loadMonth);

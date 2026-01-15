@@ -3,12 +3,12 @@ package com.sanjana.oneforall.adapters;
 import android.content.ClipData;
 import android.content.Context;
 import android.graphics.drawable.GradientDrawable;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -38,8 +38,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
     @NonNull
     @Override
     public DayViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(context)
-                .inflate(R.layout.item_calendar_day, parent, false);
+        View v = LayoutInflater.from(context).inflate(R.layout.item_calendar_day, parent, false);
         return new DayViewHolder(v);
     }
 
@@ -48,31 +47,35 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
         DayCell cell = dayCells.get(position);
         holder.llEventContainer.removeAllViews();
 
-        if (cell.day == 0) { holder.tvDay.setText(""); return; }
+        if (cell.day == 0) {
+            holder.tvDay.setText("");
+            return;
+        }
         holder.tvDay.setText(String.valueOf(cell.day));
 
+        // Show small cards inside the grid cell (like preview)
         for (CalendarEvent e : cell.events) {
             LinearLayout card = new LinearLayout(context);
             card.setOrientation(LinearLayout.VERTICAL);
-            card.setPadding(12,12,12,12);
+            card.setPadding(8, 6, 8, 6);
 
             GradientDrawable bg = new GradientDrawable();
             bg.setCornerRadius(8f);
-            bg.setColor(0xFFF5F5F5);
-            bg.setStroke(1, 0xFFDDDDDD);
+            bg.setColor(0xFFE0F7FA); // light color for category
+            bg.setStroke(1, 0xFFB0B0B0);
             card.setBackground(bg);
 
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
             );
-            lp.topMargin = 6;
+            lp.topMargin = 4;
             card.setLayoutParams(lp);
 
             TextView tvTitle = new TextView(context);
             tvTitle.setText(e.title);
             tvTitle.setTextColor(e.categoryColor);
-            tvTitle.setTextSize(13f);
+            tvTitle.setTextSize(12f);
             tvTitle.setSingleLine(true);
             tvTitle.setEllipsize(TextUtils.TruncateAt.END);
             card.addView(tvTitle);
@@ -88,6 +91,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
             holder.llEventContainer.addView(card);
         }
 
+        // Drag & drop listener for the whole day cell
         holder.itemView.setOnDragListener((v, event) -> {
             switch (event.getAction()) {
                 case android.view.DragEvent.ACTION_DROP:
@@ -100,11 +104,14 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
             return true;
         });
 
+        // Click to open popup with detailed events
         holder.itemView.setOnClickListener(v -> clickCallback.accept(cell));
     }
 
     @Override
-    public int getItemCount() { return dayCells.size(); }
+    public int getItemCount() {
+        return dayCells.size();
+    }
 
     static class DayViewHolder extends RecyclerView.ViewHolder {
         TextView tvDay;
@@ -118,7 +125,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.DayVie
     }
 
     public static class DragData {
-        public CalendarEvent event;
+        public final CalendarEvent event;
         public DragData(CalendarEvent e) { this.event = e; }
     }
 

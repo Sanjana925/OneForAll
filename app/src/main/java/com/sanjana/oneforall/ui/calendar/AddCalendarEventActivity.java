@@ -1,6 +1,8 @@
 package com.sanjana.oneforall.ui.calendar;
 
 import android.app.DatePickerDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
@@ -51,20 +53,21 @@ public class AddCalendarEventActivity extends AppCompatActivity {
 
         loadCategories();
 
-        // Check if editing existing event
         int eventId = getIntent().getIntExtra("calendarEventId", -1);
-        if (eventId != -1) {
-            loadExistingEvent(eventId);
-        } else {
-            btnDelete.setVisibility(View.GONE); // hide delete if adding new
-        }
+        if (eventId != -1) loadExistingEvent(eventId);
+        else btnDelete.setVisibility(View.GONE);
 
         btnSave.setOnClickListener(v -> saveEvent());
         btnCancel.setOnClickListener(v -> finish());
         btnDelete.setOnClickListener(v -> deleteEvent());
     }
 
-    // -------------------- LOAD CATEGORIES --------------------
+    public static void start(Context context, int calendarEventId) {
+        Intent intent = new Intent(context, AddCalendarEventActivity.class);
+        intent.putExtra("calendarEventId", calendarEventId);
+        context.startActivity(intent);
+    }
+
     private void loadCategories() {
         executor.execute(() -> {
             categories = db.categoryDao().getAllCategories();
@@ -87,16 +90,14 @@ public class AddCalendarEventActivity extends AppCompatActivity {
         });
     }
 
-    // -------------------- DATE PICKER --------------------
     private void showDatePicker() {
         Calendar c = Calendar.getInstance();
         new DatePickerDialog(this,
-                (v, y, m, d) -> editDate.setText(String.format("%04d-%02d-%02d", y, m + 1, d)),
+                (v, y, m, d) -> editDate.setText(String.format("%04d-%02d-%02d", y, m+1, d)),
                 c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH))
                 .show();
     }
 
-    // -------------------- LOAD EXISTING EVENT --------------------
     private void loadExistingEvent(int id) {
         executor.execute(() -> {
             CalendarEvent e = db.calendarEventDao().getEventById(id);
@@ -108,15 +109,11 @@ public class AddCalendarEventActivity extends AppCompatActivity {
                     editEpisodes.setText(String.valueOf(e.episodeCount));
                     editStartEp.setText(String.valueOf(e.startEp));
                     editEndEp.setText(String.valueOf(e.endEp));
-
-                    // set spinner selection based on color
-                    for (int i = 0; i < categories.size(); i++) {
+                    for (int i=0;i<categories.size();i++) {
                         if (categories.get(i).color == e.categoryColor) {
-                            spinnerCategory.setSelection(i);
-                            break;
+                            spinnerCategory.setSelection(i); break;
                         }
                     }
-
                     btnDelete.setVisibility(View.VISIBLE);
                     btnSave.setText("Update");
                 });
@@ -124,7 +121,6 @@ public class AddCalendarEventActivity extends AppCompatActivity {
         });
     }
 
-    // -------------------- SAVE / UPDATE EVENT --------------------
     private void saveEvent() {
         String title = editTitle.getText().toString().trim();
         String date = editDate.getText().toString().trim();
@@ -132,44 +128,39 @@ public class AddCalendarEventActivity extends AppCompatActivity {
         int startEp = parseInt(editStartEp.getText().toString());
         int endEp = parseInt(editEndEp.getText().toString());
 
-        if (title.isEmpty() || date.isEmpty() || episodes <= 0 || startEp <= 0 || endEp < startEp) {
-            Toast.makeText(this, "Please fill all fields correctly", Toast.LENGTH_SHORT).show();
+        if (title.isEmpty() || date.isEmpty() || episodes<=0 || startEp<=0 || endEp<startEp) {
+            Toast.makeText(this,"Please fill all fields correctly",Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (existingEvent != null) {
-            // Update existing
-            existingEvent.title = title;
-            existingEvent.date = date;
-            existingEvent.episodeCount = episodes;
-            existingEvent.startEp = startEp;
-            existingEvent.endEp = endEp;
-            existingEvent.categoryColor = selectedCategoryColor;
+        if (existingEvent!=null) {
+            existingEvent.title=title;
+            existingEvent.date=date;
+            existingEvent.episodeCount=episodes;
+            existingEvent.startEp=startEp;
+            existingEvent.endEp=endEp;
+            existingEvent.categoryColor=selectedCategoryColor;
 
             executor.execute(() -> {
                 db.calendarEventDao().update(existingEvent);
-                runOnUiThread(() -> finish());
+                runOnUiThread(this::finish);
             });
         } else {
-            // Add new
-            CalendarEvent event = new CalendarEvent(title, date, episodes, startEp, endEp, selectedCategoryColor);
+            CalendarEvent event = new CalendarEvent(title,date,episodes,startEp,endEp,selectedCategoryColor);
             executor.execute(() -> {
                 db.calendarEventDao().insert(event);
-                runOnUiThread(() -> finish());
+                runOnUiThread(this::finish);
             });
         }
     }
 
-    // -------------------- DELETE EVENT --------------------
     private void deleteEvent() {
-        if (existingEvent == null) return;
+        if (existingEvent==null) return;
         executor.execute(() -> {
             db.calendarEventDao().delete(existingEvent);
             runOnUiThread(this::finish);
         });
     }
 
-    private int parseInt(String s) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return 0; }
-    }
+    private int parseInt(String s) { try { return Integer.parseInt(s); } catch(Exception e){return 0;} }
 }

@@ -1,8 +1,9 @@
-// Item.java
 package com.sanjana.oneforall.database;
 
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+
 @Entity
 public class Item {
     @PrimaryKey(autoGenerate = true)
@@ -18,9 +19,20 @@ public class Item {
     public int score;
     public String notes;
 
+    @ColumnInfo(name = "lastUpdated")
+    public long lastUpdated = System.currentTimeMillis(); // auto-init current time
+
+    @ColumnInfo(name = "orderIndex")
+    public int orderIndex = 0; // default 0
+
+    // No-arg constructor required by Room
+    public Item() {}
+
+    // Optional: full constructor including new fields
     public Item(String title, int categoryId, String status,
                 int currentProgress, int totalProgress,
-                String startDate, String endDate, int score, String notes) {
+                String startDate, String endDate, int score, String notes,
+                long lastUpdated, int orderIndex) {
         this.title = title;
         this.categoryId = categoryId;
         this.status = status;
@@ -30,5 +42,7 @@ public class Item {
         this.endDate = endDate;
         this.score = score;
         this.notes = notes;
+        this.lastUpdated = lastUpdated;
+        this.orderIndex = orderIndex;
     }
 }

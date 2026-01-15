@@ -2,6 +2,8 @@ package com.sanjana.oneforall.adapters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,6 +38,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         this.db = AppDatabase.getInstance(context);
     }
 
+    // ---------------- VIEW CREATION ----------------
     @NonNull
     @Override
     public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -43,6 +46,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         return new ItemViewHolder(v);
     }
 
+    // ---------------- BIND VIEW ----------------
     @Override
     public void onBindViewHolder(@NonNull ItemViewHolder h, int position) {
         Item item = items.get(position);
@@ -50,7 +54,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         h.tvTitle.setText(item.title);
         h.tvStatus.setText(item.status);
 
-        // Load category (name + color)
+        // Load category
         executor.execute(() -> {
             Category c = db.categoryDao().getCategoryById(item.categoryId);
             h.itemView.post(() -> {
@@ -62,13 +66,30 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         });
 
         int max = item.totalProgress > 0 ? item.totalProgress : 100;
-        h.progressBar.setMax(max);
-        h.progressBar.setProgress(item.currentProgress);
-        h.tvProgress.setText(item.currentProgress + "/" + max);
+        boolean isCompleted = item.currentProgress >= max
+                || "Completed".equals(item.status);
 
-        h.btnIncrease.setVisibility(item.currentProgress < max ? View.VISIBLE : View.GONE);
-        h.btnDecrease.setVisibility(item.currentProgress > 0 ? View.VISIBLE : View.GONE);
+        // ---- PROGRESS UI ----
+        if (isCompleted) {
+            h.progressBar.setVisibility(View.GONE);
+            h.tvProgress.setVisibility(View.GONE);
+            h.btnIncrease.setVisibility(View.GONE);
+            h.btnDecrease.setVisibility(View.GONE);
+        } else {
+            h.progressBar.setVisibility(View.VISIBLE);
+            h.tvProgress.setVisibility(View.VISIBLE);
 
+            h.progressBar.setMax(max);
+            h.progressBar.setProgress(item.currentProgress);
+            h.tvProgress.setText(item.currentProgress + "/" + max);
+
+            h.btnIncrease.setVisibility(View.VISIBLE);
+            h.btnDecrease.setVisibility(
+                    item.currentProgress > 0 ? View.VISIBLE : View.GONE
+            );
+        }
+
+        // ---- BUTTONS ----
         h.btnIncrease.setOnClickListener(v -> changeProgress(item, position, true));
         h.btnDecrease.setOnClickListener(v -> changeProgress(item, position, false));
 
@@ -83,14 +104,21 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
                         .setTitle("Delete Item")
                         .setMessage("Are you sure?")
                         .setPositiveButton("Yes", (d, w) -> executor.execute(() -> {
+
+                            // 1️⃣ Delete related calendar events
+                            db.calendarEventDao().getEventsByTitle(item.title)
+                                    .forEach(db.calendarEventDao()::delete);
+
+                            // 2️⃣ Reset item's start/end dates & progress
+                            item.startDate = null;
+                            item.endDate = null;
+                            item.status = "Planned";
+                            item.currentProgress = 0;
+
+                            // 3️⃣ Delete the item itself
                             db.itemDao().delete(item);
 
-                            List<CalendarEvent> events =
-                                    db.calendarEventDao().getEventsByTitle(item.title);
-                            for (CalendarEvent e : events) {
-                                db.calendarEventDao().delete(e);
-                            }
-
+                            // 4️⃣ Update UI
                             h.itemView.post(() -> {
                                 items.remove(position);
                                 notifyItemRemoved(position);
@@ -100,10 +128,10 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
                         .setNegativeButton("Cancel", null)
                         .show()
         );
+
     }
 
-    // ---------------- PROGRESS LOGIC ----------------
-
+    // ---------------- CHANGE PROGRESS ----------------
     private void changeProgress(Item item, int position, boolean increase) {
         executor.execute(() -> {
             int old = item.currentProgress;
@@ -112,80 +140,63 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
             if (increase && old < max) item.currentProgress++;
             if (!increase && old > 0) item.currentProgress--;
 
+            item.lastUpdated = System.currentTimeMillis();
             String today = LocalDate.now().toString();
 
             // STARTED
             if (old == 0 && item.currentProgress == 1) {
                 item.startDate = today;
-                addCalendarEvent(item, today, 1, 1);
                 item.status = "Watching";
             }
 
-            // WATCHING
-            if (item.currentProgress > 0 && item.currentProgress < max) {
-                addOrUpdateWatchingEvent(item, today);
-                item.status = "Watching";
+            // WATCHING / COMPLETED
+            if (item.currentProgress > 0) {
+                addOrUpdateProgressEvent(item, today);
+                item.status =
+                        item.currentProgress == max ? "Completed" : "Watching";
             }
 
-            // COMPLETED
-            if (item.currentProgress == max) {
-                removeWatchingEvent(today, item.title);
-                addCalendarEvent(item, today, max, max);
-                item.status = "Completed";
+            // REMOVE EVENT IF PROGRESS = 0
+            if (item.currentProgress == 0) {
+                CalendarEvent e =
+                        db.calendarEventDao()
+                                .getEventByTitleAndDate(item.title, today);
+                if (e != null) db.calendarEventDao().delete(e);
             }
 
             db.itemDao().update(item);
-            notifyUi(position);
+
+            new Handler(Looper.getMainLooper())
+                    .post(() -> notifyItemChanged(position));
         });
     }
 
-    private void notifyUi(int position) {
-        new android.os.Handler(android.os.Looper.getMainLooper())
-                .post(() -> notifyItemChanged(position));
-    }
+    // ---------------- CALENDAR (SINGLE EVENT PER DAY) ----------------
+    private void addOrUpdateProgressEvent(Item item, String date) {
 
-    // ---------------- CALENDAR HELPERS ----------------
-
-    private void addCalendarEvent(Item item, String date, int startEp, int endEp) {
-        CalendarEvent e = new CalendarEvent(
-                item.title,
-                date,
-                endEp - startEp + 1,
-                startEp,
-                endEp,
-                getCategoryColor(item.categoryId)
-        );
-        db.calendarEventDao().insert(e);
-    }
-
-    private void addOrUpdateWatchingEvent(Item item, String date) {
-        String prefix = item.title;
         CalendarEvent existing =
-                db.calendarEventDao().getEventByTitleAndDatePrefix(prefix, date);
-
-        CalendarEvent e = new CalendarEvent(
-                item.title,
-                date,
-                item.currentProgress,
-                1,
-                item.currentProgress,
-                getCategoryColor(item.categoryId)
-        );
+                db.calendarEventDao()
+                        .getEventByTitleAndDate(item.title, date);
 
         if (existing == null) {
+            // create once
+            CalendarEvent e = new CalendarEvent(
+                    item.title,
+                    date,
+                    1,
+                    item.currentProgress,
+                    item.currentProgress,
+                    getCategoryColor(item.categoryId)
+            );
             db.calendarEventDao().insert(e);
         } else {
-            existing.episodeCount = e.episodeCount;
-            existing.startEp = e.startEp;
-            existing.endEp = e.endEp;
+            // update range
+            existing.endEp = item.currentProgress;
+            existing.episodeCount =
+                    existing.endEp - existing.startEp + 1;
+
             db.calendarEventDao().update(existing);
         }
-    }
-
-    private void removeWatchingEvent(String date, String title) {
-        CalendarEvent e =
-                db.calendarEventDao().getEventByTitleAndDatePrefix(title, date);
-        if (e != null) db.calendarEventDao().delete(e);
     }
 
     private int getCategoryColor(int categoryId) {
@@ -194,14 +205,12 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     }
 
     // ---------------- REQUIRED ----------------
-
     @Override
     public int getItemCount() {
         return items.size();
     }
 
     // ---------------- VIEW HOLDER ----------------
-
     static class ItemViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvCategory, tvStatus, tvProgress;
         ProgressBar progressBar;

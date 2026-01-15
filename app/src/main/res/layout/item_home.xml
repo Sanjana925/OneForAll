@@ -13,14 +13,18 @@
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp">
+
 
         <!-- Title + Edit/Delete -->
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
 
             <TextView
                 android:id="@+id/itemTitle"
@@ -34,18 +38,19 @@
 
             <ImageButton
                 android:id="@+id/editItem"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_edit"
-                />
+                android:contentDescription="Edit"/>
 
             <ImageButton
                 android:id="@+id/deleteItem"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_delete"/>
+                android:src="@drawable/ic_delete"
+                android:contentDescription="Delete"/>
         </LinearLayout>
 
         <!-- Category + Status -->
@@ -53,7 +58,7 @@
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:gravity="center_vertical">
 
             <TextView
@@ -95,15 +100,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center_vertical">
+
             <!-- DECREASE -->
             <ImageButton
                 android:id="@+id/btnDecreaseProgress"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:src="@drawable/ic_remove"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Decrease Progress"
-                android:layout_marginStart="8dp"/>
+                android:layout_marginEnd="8dp"/>
 
             <ProgressBar
                 android:id="@+id/itemProgress"
@@ -113,18 +119,17 @@
                 android:layout_height="8dp"
                 android:progress="0"
                 android:max="100"
-                android:progressTint="@color/purple_500"/>
-
+                android:progressTint="@color/purple_500"
+                android:layout_marginEnd="8dp"/>
 
             <!-- INCREASE -->
             <ImageButton
                 android:id="@+id/btnIncreaseProgress"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:src="@drawable/ic_add"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Increase Progress"
-                android:layout_marginStart="4dp"/>
+                android:contentDescription="Increase Progress"/>
         </LinearLayout>
 
     </LinearLayout>
