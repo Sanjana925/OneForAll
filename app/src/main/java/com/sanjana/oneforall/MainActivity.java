@@ -17,6 +17,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.imageview.ShapeableImageView;
 import com.sanjana.oneforall.ui.backup.BackupFragment;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -147,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public void updateDrawerProfile() {
         View header = navigationView.getHeaderView(0);
-        de.hdodenhof.circleimageview.CircleImageView ivAvatar = header.findViewById(R.id.ivHeaderAvatar);
+        ShapeableImageView ivAvatar = header.findViewById(R.id.ivHeaderAvatar);
         TextView tvUsername = header.findViewById(R.id.tvHeaderUsername);
 
         SharedPreferences prefs = getSharedPreferences("oneforall_prefs", MODE_PRIVATE);
@@ -157,6 +158,8 @@ public class MainActivity extends AppCompatActivity {
         tvUsername.setText(username);
         if (avatarUriStr != null) {
             ivAvatar.setImageURI(Uri.parse(avatarUriStr));
+        } else {
+            ivAvatar.setImageResource(R.drawable.ic_avatar); // placeholder
         }
     }
 
